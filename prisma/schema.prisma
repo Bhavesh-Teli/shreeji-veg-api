@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int  @id @default(autoincrement())
+  phone      String        @unique
+  email    String @unique
+  password String
+  approvalCode String? @db.Char(12)
+    // Relations
+  favorites UserFavorites[]
+  orders    Order[]
+}
+
+model Vegetable {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  price     Float   
+  unit      String  
+
+
+  favorites UserFavorites[]
+  orderItems OrderItem[]
+}
+
+
+model UserFavorites {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  vegetableId Int
+
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vegetable  Vegetable @relation(fields: [vegetableId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vegetableId]) // Ensures no duplicate favorites
+}
+model Order {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  totalPrice  Float
+  status      String   @default("pending") // Status: pending, completed, cancelled
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+}
+model OrderItem {
+  id          Int       @id @default(autoincrement())
+  orderId     Int
+  vegetableId Int
+  quantity    Float
+  price       Float   
+
+  // Relations
+  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  vegetable  Vegetable  @relation(fields: [vegetableId], references: [id], onDelete: Cascade)
+}
+
+
+
+
+model Ac_Mas {
+  ID            Int     @id @default(autoincrement())
+  Ac_Code       String  @db.NVarChar(15)
+  Ac_Name       String  @db.NVarChar(100)
+  Mobile_NO     String  @db.NVarChar(15)
+  City_ID       Int     @db.SmallInt
+  Group_ID      Int     @default(10) @db.SmallInt
+  Main_Group_ID Int     @default(7) @db.SmallInt
+  Defa          Boolean @default(false) @db.Bit
+  CancelBillAc  Boolean @default(false) @db.Bit
+  State_Name1   String  @default("Gujarat") @db.NVarChar(20)
+  Bank_Pass     String? @db.NVarChar(25)
+  State_Code    String  @default("24") @db.NVarChar(2)
+  Party_Type    String  @default("Local") @db.NVarChar(5)
+  Active        Boolean @default(true) @db.Bit
+  Cash_Party    Boolean @default(true) @db.Bit
+  Our_Shop_Ac   Boolean @default(false) @db.Bit
+}
+
+model NotificationHistory {
+  Id           Int      @id @default(autoincrement())
+  notification String
+  category     String   @db.NVarChar(20)
+  notiDateTime DateTime
+  seen         Boolean  @default(false)
+}
