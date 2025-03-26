@@ -23,14 +23,14 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 
 // src/app.ts
-var import_express4 = __toESM(require("express"));
+var import_express5 = __toESM(require("express"));
 var import_config = require("dotenv/config");
 var import_cors = __toESM(require("cors"));
 var import_morgan = __toESM(require("morgan"));
 var import_cookie_parser = __toESM(require("cookie-parser"));
 
 // src/routes/index.ts
-var import_express3 = require("express");
+var import_express4 = require("express");
 
 // src/routes/auth.routes.ts
 var import_express = require("express");
@@ -44,36 +44,39 @@ var client_default = prisma;
 var import_bcrypt = __toESM(require("bcrypt"));
 var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
 var register = async (payload) => {
-  const { phone, email, password } = payload;
-  if (!phone || !email || !password) {
-    throw new Error("Phone, email, and password are required");
+  const { accountName, phone, password } = payload;
+  if (!accountName || !phone || !password) {
+    throw new Error("Phone, accountName, and password are required");
   }
   const existingUser = await client_default.user.findFirst({
-    where: { OR: [{ email }, { phone }] }
+    where: {
+      OR: [{ phone }, { accountName }]
+    }
   });
   if (existingUser) {
-    throw new Error("User with this email or phone already exists");
+    throw new Error("User with this phone or account name already exists");
   }
   const hashedPassword = await import_bcrypt.default.hash(password, 10);
   const user = await client_default.user.create({
-    data: { phone, email, password: hashedPassword, approvalCode: null }
+    data: { accountName, phone, password: hashedPassword, approvalCode: null }
   });
-  return user;
+  const { password: _, ...userWithoutPassword } = user;
+  return userWithoutPassword;
 };
 var login = async (payload) => {
-  const { email, password } = payload;
-  const user = await client_default.user.findUnique({
-    where: { email }
+  const { accountName, password } = payload;
+  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
+  const user = await client_default.user.findFirst({
+    where: { accountName }
   });
-  if (!user) throw new Error("Invalid credentials");
-  if (!user.approvalCode) throw new Error("Account is not approved by admin");
+  if (!user) throw new Error("Invalid account name or password");
+  if (user.approvalCode === null) throw new Error("Account is not approved by admin");
   const isPasswordValid = await import_bcrypt.default.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new Error("Invalid password");
-  }
-  const token = import_jsonwebtoken.default.sign({ userId: user.id }, process.env.JWT_SECRET || "", { expiresIn: "1d" });
+  if (!isPasswordValid) throw new Error("Invalid password");
+  const token = import_jsonwebtoken.default.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+  const { password: _, ...userWithoutPassword } = user;
   return {
-    user,
+    user: userWithoutPassword,
     token
   };
 };
@@ -217,27 +220,83 @@ router2.get("/deleteFavorites", authVerify, async (req, res) => {
 });
 var favorite_routes_default = router2;
 
+// src/routes/admin.routes.ts
+var import_express3 = require("express");
+
+// src/controllers/admin.controller.ts
+var getUnapprovedUsers = async () => {
+  const users = await client_default.user.findMany({
+    where: { approvalCode: null }
+  });
+  return users;
+};
+var approveUser = async (payload) => {
+  const { userId, approvalCode } = payload;
+  await client_default.user.update({
+    where: { id: Number(userId) },
+    data: { approvalCode }
+  });
+};
+var rejectUser = async (payload) => {
+  const { userId } = payload;
+  await client_default.user.update({
+    where: { id: Number(userId) },
+    data: { approvalCode: null }
+  });
+};
+
+// src/routes/admin.routes.ts
+var router3 = (0, import_express3.Router)();
+router3.get("/getUnapprovedUsers", async (req, res) => {
+  try {
+    const users = await getUnapprovedUsers();
+    return successResponse(res, users, "Unapproved users fetched successfully");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+});
+router3.post("/approveUser", async (req, res) => {
+  try {
+    const payload = req.body;
+    await approveUser(payload);
+    return successResponse(res, "User approved successfully");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+});
+router3.post("/rejectUser", async (req, res) => {
+  try {
+    const payload = req.body;
+    await rejectUser(payload);
+    return successResponse(res, "User rejected successfully");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+});
+var admin_routes_default = router3;
+
 // src/routes/index.ts
 var registerRoutes = (app2) => {
-  const router3 = (0, import_express3.Router)();
-  router3.use(auth_routes_default);
-  router3.use(favorite_routes_default);
-  router3.use("/*", (req, res) => {
+  const router4 = (0, import_express4.Router)();
+  router4.use(auth_routes_default);
+  router4.use(favorite_routes_default);
+  router4.use(admin_routes_default);
+  router4.use("/*", (req, res) => {
     res.status(404).send("Not found");
   });
-  app2.use("/api", router3);
+  app2.use("/api", router4);
 };
 var routes_default = registerRoutes;
 
 // src/app.ts
-var app = (0, import_express4.default)();
+var app = (0, import_express5.default)();
 app.use(
   (0, import_cors.default)({
     origin: process.env.CORS_ORIGIN,
     credentials: true
   })
 );
-app.use(import_express4.default.json());
+app.use(import_express5.default.json());
 app.use((0, import_morgan.default)("dev"));
 app.use((0, import_cookie_parser.default)());
 routes_default(app);

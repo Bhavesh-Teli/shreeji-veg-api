@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,64 +8,53 @@ datasource db {
 }
 
 model User {
-  id       Int  @id @default(autoincrement())
-  phone      String        @unique
-  email    String @unique
-  password String
-  approvalCode String? @db.Char(12)
-    // Relations
-  favorites UserFavorites[]
-  orders    Order[]
+  id           Int             @id @default(autoincrement())
+  phone        String          @unique
+  accountName  String          @unique(map: "User_email_key")
+  password     String
+  approvalCode String?         @db.Char(12)
+  orders       Order[]
+  favorites    UserFavorites[]
 }
 
 model Vegetable {
-  id        Int     @id @default(autoincrement())
-  name      String  @unique
-  price     Float   
-  unit      String  
-
-
-  favorites UserFavorites[]
+  id         Int             @id @default(autoincrement())
+  name       String          @unique
+  price      Float
+  unit       String
   orderItems OrderItem[]
+  favorites  UserFavorites[]
 }
-
 
 model UserFavorites {
   id          Int       @id @default(autoincrement())
   userId      Int
   vegetableId Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vegetable   Vegetable @relation(fields: [vegetableId], references: [id], onDelete: Cascade)
 
-
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vegetable  Vegetable @relation(fields: [vegetableId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, vegetableId]) // Ensures no duplicate favorites
+  @@unique([userId, vegetableId])
 }
-model Order {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  totalPrice  Float
-  status      String   @default("pending") // Status: pending, completed, cancelled
-  createdAt   DateTime @default(now())
 
-  // Relations
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Order {
+  id         Int         @id @default(autoincrement())
+  userId     Int
+  totalPrice Float
+  status     String      @default("pending")
+  createdAt  DateTime    @default(now())
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
 }
+
 model OrderItem {
   id          Int       @id @default(autoincrement())
   orderId     Int
   vegetableId Int
   quantity    Float
-  price       Float   
-
-  // Relations
-  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  vegetable  Vegetable  @relation(fields: [vegetableId], references: [id], onDelete: Cascade)
+  price       Float
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  vegetable   Vegetable @relation(fields: [vegetableId], references: [id], onDelete: Cascade)
 }
-
-
-
 
 model Ac_Mas {
   ID            Int     @id @default(autoincrement())
@@ -81,15 +64,15 @@ model Ac_Mas {
   City_ID       Int     @db.SmallInt
   Group_ID      Int     @default(10) @db.SmallInt
   Main_Group_ID Int     @default(7) @db.SmallInt
-  Defa          Boolean @default(false) @db.Bit
-  CancelBillAc  Boolean @default(false) @db.Bit
+  Defa          Boolean @default(false)
+  CancelBillAc  Boolean @default(false)
   State_Name1   String  @default("Gujarat") @db.NVarChar(20)
   Bank_Pass     String? @db.NVarChar(25)
   State_Code    String  @default("24") @db.NVarChar(2)
   Party_Type    String  @default("Local") @db.NVarChar(5)
-  Active        Boolean @default(true) @db.Bit
-  Cash_Party    Boolean @default(true) @db.Bit
-  Our_Shop_Ac   Boolean @default(false) @db.Bit
+  Active        Boolean @default(true)
+  Cash_Party    Boolean @default(true)
+  Our_Shop_Ac   Boolean @default(false)
 }
 
 model NotificationHistory {

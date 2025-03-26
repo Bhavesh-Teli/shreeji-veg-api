@@ -1,6 +1,6 @@
 export interface IUser {
+    accountName:string;
     phone:string;
-    email: string;
     password: string;
     approvalCode:string |null;
 }   
