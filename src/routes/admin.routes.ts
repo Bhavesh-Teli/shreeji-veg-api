@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { approveUser, getUnapprovedUsers, rejectUser } from "../controllers/admin.controller";
 import { errorResponse, successResponse } from "../utils/responseHelper";
+import { authorizeAdmin, authVerify } from "../middleware/middleware";
 
 const router = Router();
 
-router.get("/getUnapprovedUsers", async (req, res) => {
+router.get("/getUnapprovedUsers",authVerify,authorizeAdmin, async (req, res) => {
     try {
         const users = await getUnapprovedUsers();
         return successResponse(res, users, "Unapproved users fetched successfully");
@@ -13,7 +14,7 @@ router.get("/getUnapprovedUsers", async (req, res) => {
     }
 }); 
 
-router.post("/approveUser", async (req, res) => {
+router.post("/approveUser",authVerify,authorizeAdmin, async (req, res) => {
     try {
         const payload = req.body;
         await approveUser(payload);

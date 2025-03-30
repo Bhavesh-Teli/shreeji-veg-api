@@ -1,48 +1,104 @@
-import prisma from "../prisma/client";
-import bcrypt from "bcrypt";
+import { getLastIdFromCommonDB, insertIntoCommonDB, pool } from "../config/dbConfig";
 import jwt from "jsonwebtoken";
 import { IUser } from "../types/IUser";
 
 export const register = async (payload: IUser) => {
-  const { accountName, phone, password } = payload;
-  if (!accountName || !phone || !password) {
-    throw new Error("Phone, accountName, and password are required");
+  const { Ac_Name, Mobile_No, Book_Pass } = payload;
+
+  if (!Ac_Name || !Mobile_No || !Book_Pass) {
+    throw new Error("Ac_Name, Mobile_No, and Book_Pass are required");
   }
 
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      OR: [{ phone }, { accountName }],
-    },
-  });
+  const transaction = pool.transaction();
+  await transaction.begin();
 
-  if (existingUser) {
-    throw new Error("User with this phone or account name already exists");
+  try {
+    const exists = await transaction
+      .request()
+      .input("Ac_Name", Ac_Name)
+      .input("Mobile_No", Mobile_No)
+      .query(`SELECT 1 FROM Ac_Mas WHERE Ac_Name = @Ac_Name OR Mobile_No = @Mobile_No`);
+
+    if (exists.recordset.length > 0) {
+      throw new Error("Ac_Name or Mobile_No already exists");
+    }
+    const newId = (await getLastIdFromCommonDB()) + 1;
+
+    await transaction
+      .request()
+      .input("Id", newId)
+      .input("Ac_Name", Ac_Name)
+      .input("Mobile_No", Mobile_No)
+      .input("Book_Pass", Book_Pass)
+      .input("Main_Grp_Id", 7)
+      .input("Sub_Grp_Id", 3)
+      .input("Defa", 0)
+      .input("Cancel_Bill_Ac", 0)
+      .input("State_Name1", "Gujarat")
+      .input("State_Code", "24")
+      .input("Party_Type", "Local")
+      .input("Active", 1)
+      .input("Cash_Party", 1)
+      .input("Our_Shop_Ac", 0).query(`
+      INSERT INTO Ac_Mas (
+        Id, Ac_Name, Mobile_No, Book_Pass,
+        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
+        State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac
+      ) VALUES (
+        @Id, @Ac_Name, @Mobile_No, @Book_Pass,
+        @Main_Grp_Id, @Sub_Grp_Id, @Defa, @Cancel_Bill_Ac,
+        @State_Name1, @State_Code, @Party_Type, @Active, @Cash_Party, @Our_Shop_Ac
+      )
+    `);
+    await insertIntoCommonDB(newId);
+    await transaction.commit();
+    const { Book_Pass: _, ...userWithoutPassword } = payload;
+    return { message: "User created successfully", user: userWithoutPassword };
+  } catch (error: any) {
+    await transaction.rollback();
+    throw new Error(error.message || "User registration failed");
   }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: { accountName, phone, password: hashedPassword, approvalCode: null },
-  });
-    const { password: _, ...userWithoutPassword } = user;
-  return userWithoutPassword;
 };
 
 export const login = async (payload: IUser) => {
-  const { accountName, password } = payload;
-  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
+  const { Ac_Name, Book_Pass } = payload;
 
-  const user = await prisma.user.findFirst({
-    where: { accountName },
-  });
-  if (!user) throw new Error("Invalid account name or password");
-  if (user.approvalCode === null) throw new Error("Account is not approved by admin");
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not set");
+  }
+  try {
+    if (Ac_Name === process.env.ADMIN_NAME && Book_Pass === process.env.ADMIN_PASSWORD) {
+      const token = jwt.sign({ userId: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+      return {
+        user: { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true },
+        token,
+      };
+    }
 
-  if (!isPasswordValid) throw new Error("Invalid password");
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-  const { password: _, ...userWithoutPassword } = user;
-  return {
-    user: userWithoutPassword,
-    token,
-  };
+    const result = await pool
+      .request()
+      .input("Ac_Name", Ac_Name)
+      .query(`SELECT Id, Ac_Name, Book_Pass, Ac_Code FROM Ac_Mas WHERE Ac_Name = @Ac_Name`);
+
+    const user = result.recordset[0];
+
+    if (!user || user.Book_Pass !== Book_Pass) {
+      throw new Error("Invalid account name or password");
+    }
+
+    if (user.Ac_Code === null) {
+      throw new Error("Account is not approved by admin");
+    }
+
+    const token = jwt.sign({ userId: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+    const { Book_Pass: _, ...userWithoutPassword } = user;
+
+    return {
+      user: userWithoutPassword,
+      token,
+    };
+  } catch (error: any) {
+    throw new Error(`Login failed: ${error.message}`);
+  }
 };

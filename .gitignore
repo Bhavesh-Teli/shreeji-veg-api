@@ -1,4 +1,9 @@
-node_modules
+# Node.js dependencies
+node_modules/
+
+# Output directories
+dist/
 # Keep environment variables out of version control
 .env
 package-lock.json
+dist

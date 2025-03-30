@@ -24,7 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // src/app.ts
 var import_express5 = __toESM(require("express"));
-var import_config = require("dotenv/config");
+var import_dotenv2 = __toESM(require("dotenv"));
 var import_cors = __toESM(require("cors"));
 var import_morgan = __toESM(require("morgan"));
 var import_cookie_parser = __toESM(require("cookie-parser"));
@@ -35,50 +35,132 @@ var import_express4 = require("express");
 // src/routes/auth.routes.ts
 var import_express = require("express");
 
-// src/prisma/client.ts
-var import_client = require("@prisma/client");
-var prisma = new import_client.PrismaClient();
-var client_default = prisma;
+// src/config/dbConfig.ts
+var import_mssql = __toESM(require("mssql"));
+var import_dotenv = __toESM(require("dotenv"));
+import_dotenv.default.config();
+var shreejiDbConfig = {
+  user: process.env.SHREEJI_DB_USER || "",
+  password: process.env.SHREEJI_DB_PASSWORD || "",
+  server: process.env.SHREEJI_DB_SERVER || "",
+  database: process.env.SHREEJI_DB_DATABASE || "",
+  port: Number(process.env.SHREEJI_DB_PORT) || 1433,
+  options: {
+    encrypt: false,
+    // Set true if using Azure
+    trustServerCertificate: true
+  }
+};
+var commonDbConfig = {
+  user: process.env.COMMON_DB_USER || "",
+  password: process.env.COMMON_DB_PASSWORD || "",
+  server: process.env.COMMON_DB_SERVER || "",
+  database: process.env.COMMON_DB_DATABASE || "",
+  port: Number(process.env.COMMON_DB_PORT) || 1433,
+  options: {
+    encrypt: false,
+    // Set true if using Azure
+    trustServerCertificate: true
+  }
+};
+var pool = new import_mssql.default.ConnectionPool(shreejiDbConfig);
+var poolCommon = new import_mssql.default.ConnectionPool(commonDbConfig);
+var connectDB = async () => {
+  try {
+    await pool.connect();
+    console.log("Connected to ShreejiVegDB \u2705");
+  } catch (err) {
+    console.error("Database Connection Failed \u274C", err);
+    process.exit(1);
+  }
+};
+var getLastIdFromCommonDB = async () => {
+  const tempPool = await new import_mssql.default.ConnectionPool(commonDbConfig).connect();
+  try {
+    const lastIdQuery = `SELECT TOP 1 Id FROM Ac_Mas ORDER BY Id DESC`;
+    const lastIdResult = await tempPool.request().query(lastIdQuery);
+    return lastIdResult.recordset[0]?.Id || 0;
+  } finally {
+    tempPool.close();
+  }
+};
+var insertIntoCommonDB = async (newId) => {
+  const tempPool = await new import_mssql.default.ConnectionPool(commonDbConfig).connect();
+  try {
+    const insertCommonDbQuery = `
+      INSERT INTO Ac_Mas (Id) VALUES (@id);
+    `;
+    await tempPool.request().input("id", import_mssql.default.Int, newId).query(insertCommonDbQuery);
+  } finally {
+    tempPool.close();
+  }
+};
 
 // src/controllers/auth.controller.ts
-var import_bcrypt = __toESM(require("bcrypt"));
 var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
 var register = async (payload) => {
-  const { accountName, phone, password } = payload;
-  if (!accountName || !phone || !password) {
-    throw new Error("Phone, accountName, and password are required");
+  const { Ac_Name, Mobile_No, Book_Pass } = payload;
+  if (!Ac_Name || !Mobile_No || !Book_Pass) {
+    throw new Error("Ac_Name, Mobile_No, and Book_Pass are required");
   }
-  const existingUser = await client_default.user.findFirst({
-    where: {
-      OR: [{ phone }, { accountName }]
+  const transaction = pool.transaction();
+  await transaction.begin();
+  try {
+    const exists = await transaction.request().input("Ac_Name", Ac_Name).input("Mobile_No", Mobile_No).query(`SELECT 1 FROM Ac_Mas WHERE Ac_Name = @Ac_Name OR Mobile_No = @Mobile_No`);
+    if (exists.recordset.length > 0) {
+      throw new Error("Ac_Name or Mobile_No already exists");
     }
-  });
-  if (existingUser) {
-    throw new Error("User with this phone or account name already exists");
+    const newId = await getLastIdFromCommonDB() + 1;
+    await transaction.request().input("Id", newId).input("Ac_Name", Ac_Name).input("Mobile_No", Mobile_No).input("Book_Pass", Book_Pass).input("Main_Grp_Id", 7).input("Sub_Grp_Id", 3).input("Defa", 0).input("Cancel_Bill_Ac", 0).input("State_Name1", "Gujarat").input("State_Code", "24").input("Party_Type", "Local").input("Active", 1).input("Cash_Party", 1).input("Our_Shop_Ac", 0).query(`
+      INSERT INTO Ac_Mas (
+        Id, Ac_Name, Mobile_No, Book_Pass,
+        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
+        State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac
+      ) VALUES (
+        @Id, @Ac_Name, @Mobile_No, @Book_Pass,
+        @Main_Grp_Id, @Sub_Grp_Id, @Defa, @Cancel_Bill_Ac,
+        @State_Name1, @State_Code, @Party_Type, @Active, @Cash_Party, @Our_Shop_Ac
+      )
+    `);
+    await insertIntoCommonDB(newId);
+    await transaction.commit();
+    const { Book_Pass: _, ...userWithoutPassword } = payload;
+    return { message: "User created successfully", user: userWithoutPassword };
+  } catch (error) {
+    await transaction.rollback();
+    throw new Error(error.message || "User registration failed");
   }
-  const hashedPassword = await import_bcrypt.default.hash(password, 10);
-  const user = await client_default.user.create({
-    data: { accountName, phone, password: hashedPassword, approvalCode: null }
-  });
-  const { password: _, ...userWithoutPassword } = user;
-  return userWithoutPassword;
 };
 var login = async (payload) => {
-  const { accountName, password } = payload;
-  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
-  const user = await client_default.user.findFirst({
-    where: { accountName }
-  });
-  if (!user) throw new Error("Invalid account name or password");
-  if (user.approvalCode === null) throw new Error("Account is not approved by admin");
-  const isPasswordValid = await import_bcrypt.default.compare(password, user.password);
-  if (!isPasswordValid) throw new Error("Invalid password");
-  const token = import_jsonwebtoken.default.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-  const { password: _, ...userWithoutPassword } = user;
-  return {
-    user: userWithoutPassword,
-    token
-  };
+  const { Ac_Name, Book_Pass } = payload;
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not set");
+  }
+  try {
+    if (Ac_Name === process.env.ADMIN_NAME && Book_Pass === process.env.ADMIN_PASSWORD) {
+      const token2 = import_jsonwebtoken.default.sign({ userId: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+      return {
+        user: { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true },
+        token: token2
+      };
+    }
+    const result = await pool.request().input("Ac_Name", Ac_Name).query(`SELECT Id, Ac_Name, Book_Pass, Ac_Code FROM Ac_Mas WHERE Ac_Name = @Ac_Name`);
+    const user = result.recordset[0];
+    if (!user || user.Book_Pass !== Book_Pass) {
+      throw new Error("Invalid account name or password");
+    }
+    if (user.Ac_Code === null) {
+      throw new Error("Account is not approved by admin");
+    }
+    const token = import_jsonwebtoken.default.sign({ userId: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const { Book_Pass: _, ...userWithoutPassword } = user;
+    return {
+      user: userWithoutPassword,
+      token
+    };
+  } catch (error) {
+    throw new Error(`Login failed: ${error.message}`);
+  }
 };
 
 // src/utils/responseHelper.ts
@@ -114,42 +196,6 @@ var auth_routes_default = router;
 // src/routes/favorite.routes.ts
 var import_express2 = require("express");
 
-// src/controllers/favorite.controller.ts
-var addFavorite = async (payload) => {
-  const { userId, vegetableId } = payload;
-  const existingFavorite = await client_default.userFavorites.findFirst({
-    where: { userId, vegetableId: Number(vegetableId) }
-  });
-  if (existingFavorite) {
-    throw new Error("Vegetable already in favorites");
-  }
-  const favorite = await client_default.userFavorites.create({
-    data: {
-      userId,
-      vegetableId: Number(vegetableId)
-    }
-  });
-  return favorite;
-};
-var getFavorite = async (payload) => {
-  const { userId } = payload;
-  const favorites = await client_default.userFavorites.findMany({
-    where: { userId: Number(userId) },
-    include: { vegetable: true }
-  });
-  return favorites;
-};
-var removeFavorite = async (payload) => {
-  const { userId, vegetableId } = payload;
-  const deleted = await client_default.userFavorites.deleteMany({
-    where: {
-      userId: Number(userId),
-      vegetableId: Number(vegetableId)
-    }
-  });
-  return deleted;
-};
-
 // src/middleware/middleware.ts
 var import_jsonwebtoken2 = __toESM(require("jsonwebtoken"));
 var authVerify = async (req, res, next) => {
@@ -165,17 +211,28 @@ var authVerify = async (req, res, next) => {
       return;
     }
     const decodedToken = import_jsonwebtoken2.default.verify(token, process.env.JWT_SECRET);
-    const user = await client_default.user.findUnique({ where: { id: decodedToken.userId } });
-    if (!user) {
-      res.status(401).send({ error: "Invalid User Token" });
+    if (decodedToken.userId === "admin") {
+      req.user = { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true };
+      return next();
+    }
+    const result = await pool.request().input("userId", import_mssql.default.Int, decodedToken.userId).query("SELECT * FROM Ac_Mas WHERE Id = @userId");
+    if (result.recordset.length === 0) {
+      res.status(401).json({ error: "Invalid User Token" });
       return;
     }
-    req.user = user;
+    req.user = result.recordset[0];
     next();
   } catch (error) {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
+};
+var authorizeAdmin = (req, res, next) => {
+  if (!req.user?.isAdmin) {
+    res.status(403).json({ message: "Access forbidden. Admins only." });
+    return;
+  }
+  next();
 };
 
 // src/routes/favorite.routes.ts
@@ -186,7 +243,7 @@ router2.post("/addToFavorites", authVerify, async (req, res) => {
       userId: req.user.id,
       ...req.body
     };
-    const result = await addFavorite(payload);
+    const result = await (void 0)(payload);
     return successResponse(res, result, "Successfully add to favorite");
   } catch (error) {
     console.log(error);
@@ -198,7 +255,7 @@ router2.get("/getFavorites", authVerify, async (req, res) => {
     const payload = {
       userId: req.user.id
     };
-    const result = await getFavorite(payload);
+    const result = await (void 0)(payload);
     return successResponse(res, result, "Fetched favorites successfully");
   } catch (error) {
     console.log(error);
@@ -211,7 +268,7 @@ router2.get("/deleteFavorites", authVerify, async (req, res) => {
       userId: req.user.id,
       ...req.body
     };
-    const result = await removeFavorite(payload);
+    const result = await (void 0)(payload);
     return successResponse(res, result, "Removed from favorites");
   } catch (error) {
     console.log(error);
@@ -225,29 +282,40 @@ var import_express3 = require("express");
 
 // src/controllers/admin.controller.ts
 var getUnapprovedUsers = async () => {
-  const users = await client_default.user.findMany({
-    where: { approvalCode: null }
-  });
-  return users;
+  try {
+    const result = await pool.request().query(`SELECT * FROM Ac_Mas WHERE Ac_Code IS NULL`);
+    return result.recordset;
+  } catch (error) {
+    throw new Error("Error fetching unapproved users: " + error.message);
+  }
 };
 var approveUser = async (payload) => {
   const { userId, approvalCode } = payload;
-  await client_default.user.update({
-    where: { id: Number(userId) },
-    data: { approvalCode }
-  });
+  const transaction = pool.transaction();
+  try {
+    await transaction.begin();
+    const result = await transaction.request().input("userId", import_mssql.default.Int, userId).input("approvalCode", import_mssql.default.NVarChar, approvalCode).query(`
+    UPDATE Ac_Mas 
+    SET Ac_Code = @approvalCode 
+    WHERE Id = @userId
+  `);
+    if (result.rowsAffected[0] === 0) {
+      throw new Error("User not found or already approved.");
+    }
+    await transaction.commit();
+    return { message: "User approved successfully", userId, approvalCode };
+  } catch (error) {
+    await transaction.rollback();
+    throw new Error(error.message || "Something went wrong while approving the user.");
+  }
 };
 var rejectUser = async (payload) => {
   const { userId } = payload;
-  await client_default.user.update({
-    where: { id: Number(userId) },
-    data: { approvalCode: null }
-  });
 };
 
 // src/routes/admin.routes.ts
 var router3 = (0, import_express3.Router)();
-router3.get("/getUnapprovedUsers", async (req, res) => {
+router3.get("/getUnapprovedUsers", authVerify, authorizeAdmin, async (req, res) => {
   try {
     const users = await getUnapprovedUsers();
     return successResponse(res, users, "Unapproved users fetched successfully");
@@ -255,7 +323,7 @@ router3.get("/getUnapprovedUsers", async (req, res) => {
     return errorResponse(res, error.message);
   }
 });
-router3.post("/approveUser", async (req, res) => {
+router3.post("/approveUser", authVerify, authorizeAdmin, async (req, res) => {
   try {
     const payload = req.body;
     await approveUser(payload);
@@ -290,6 +358,7 @@ var routes_default = registerRoutes;
 
 // src/app.ts
 var app = (0, import_express5.default)();
+import_dotenv2.default.config();
 app.use(
   (0, import_cors.default)({
     origin: process.env.CORS_ORIGIN,
@@ -301,6 +370,10 @@ app.use((0, import_morgan.default)("dev"));
 app.use((0, import_cookie_parser.default)());
 routes_default(app);
 var PORT = process.env.PORT || 5e3;
-var server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server is running on Port ${PORT}`);
+  });
+}).catch((error) => {
+  throw error;
 });
