@@ -46,9 +46,9 @@ export const connectDB = async () => {
 export const getLastIdFromCommonDB = async () => {
   const tempPool = await new sql.ConnectionPool(commonDbConfig).connect();
   try {
-    const lastIdQuery = `SELECT TOP 1 Id FROM Ac_Mas ORDER BY Id DESC`;
+    const lastIdQuery = `SELECT TOP 1 Ac_Id FROM Ac_Mas ORDER BY Ac_Id DESC`;
     const lastIdResult = await tempPool.request().query(lastIdQuery);
-    return lastIdResult.recordset[0]?.Id || 0;
+    return lastIdResult.recordset[0]?.Ac_Id || 0;
   } finally {
     tempPool.close(); // Ensure connection is closed
   }
@@ -58,9 +58,9 @@ export const insertIntoCommonDB = async (newId: number) => {
   const tempPool = await new sql.ConnectionPool(commonDbConfig).connect();
   try {
     const insertCommonDbQuery = `
-      INSERT INTO Ac_Mas (Id) VALUES (@id);
+      INSERT INTO Ac_Mas (Ac_Id) VALUES (@Ac_Id);
     `;
-    await tempPool.request().input("id", sql.Int, newId).query(insertCommonDbQuery);
+    await tempPool.request().input("Ac_Id", sql.Int, newId).query(insertCommonDbQuery);
   } finally {
     tempPool.close(); // Ensure connection is closed even if an error occurs
   }

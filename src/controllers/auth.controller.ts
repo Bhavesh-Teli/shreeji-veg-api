@@ -1,14 +1,35 @@
 import { getLastIdFromCommonDB, insertIntoCommonDB, pool } from "../config/dbConfig";
 import jwt from "jsonwebtoken";
 import { IUser } from "../types/IUser";
+import { SendWhatsappMessage } from "../utils/whatsappApi";
 
-export const register = async (payload: IUser) => {
+const OTP_EXPIRY = 5 * 60 * 1000;
+const otpStorage = new Map<string, { otp: string; expiresAt: number }>();
+
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+
+export const requestOTP = async (mobileNo: string) => {
+  if (!mobileNo) throw new Error("Mobile number is required");
+  const otp = generateOTP();
+  otpStorage.set(mobileNo, { otp, expiresAt: Date.now() + OTP_EXPIRY });
+
+  const Message = `Your OTP is: ${otp}`;
+  SendWhatsappMessage(mobileNo, Message);
+
+  return { message: "OTP sent successfully" };
+};
+
+export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) => {
   const { Ac_Name, Mobile_No, Book_Pass } = payload;
 
-  if (!Ac_Name || !Mobile_No || !Book_Pass) {
-    throw new Error("Ac_Name, Mobile_No, and Book_Pass are required");
-  }
+  if (!Ac_Name || !Mobile_No || !Book_Pass || !enteredOTP) throw new Error("All fields including OTP are required");
 
+  const storedOTP = otpStorage.get(Mobile_No);
+  if (!storedOTP || storedOTP.otp !== enteredOTP || storedOTP.expiresAt < Date.now()) throw new Error("Invalid or expired OTP");
+  otpStorage.delete(Mobile_No);
+
+  // Begin transaction for user registration
   const transaction = pool.transaction();
   await transaction.begin();
 
@@ -22,7 +43,9 @@ export const register = async (payload: IUser) => {
     if (exists.recordset.length > 0) {
       throw new Error("Ac_Name or Mobile_No already exists");
     }
+
     const newId = (await getLastIdFromCommonDB()) + 1;
+    console.log(newId);
 
     await transaction
       .request()
@@ -50,10 +73,12 @@ export const register = async (payload: IUser) => {
         @State_Name1, @State_Code, @Party_Type, @Active, @Cash_Party, @Our_Shop_Ac
       )
     `);
+
     await insertIntoCommonDB(newId);
     await transaction.commit();
+
     const { Book_Pass: _, ...userWithoutPassword } = payload;
-    return { message: "User created successfully", user: userWithoutPassword };
+    return { message: "User registered successfully", user: userWithoutPassword };
   } catch (error: any) {
     await transaction.rollback();
     throw new Error(error.message || "User registration failed");
@@ -62,19 +87,16 @@ export const register = async (payload: IUser) => {
 
 export const login = async (payload: IUser) => {
   const { Ac_Name, Book_Pass } = payload;
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET is not set");
+  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
+  if (Ac_Name === process.env.ADMIN_NAME && Book_Pass === process.env.ADMIN_PASSWORD) {
+    const token = jwt.sign({ userId: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    return {
+      user: { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true },
+      token,
+    };
   }
+  
   try {
-    if (Ac_Name === process.env.ADMIN_NAME && Book_Pass === process.env.ADMIN_PASSWORD) {
-      const token = jwt.sign({ userId: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
-      return {
-        user: { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true },
-        token,
-      };
-    }
-
     const result = await pool
       .request()
       .input("Ac_Name", Ac_Name)
@@ -82,13 +104,8 @@ export const login = async (payload: IUser) => {
 
     const user = result.recordset[0];
 
-    if (!user || user.Book_Pass !== Book_Pass) {
-      throw new Error("Invalid account name or password");
-    }
-
-    if (user.Ac_Code === null) {
-      throw new Error("Account is not approved by admin");
-    }
+    if (!user || user.Book_Pass !== Book_Pass) throw new Error("Invalid account name or password");
+    if (!user.Ac_Code) throw new Error("Account is not approved by admin");
 
     const token = jwt.sign({ userId: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
