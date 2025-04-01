@@ -58,7 +58,9 @@ export const insertIntoCommonDB = async (newId: number) => {
   const tempPool = await new sql.ConnectionPool(commonDbConfig).connect();
   try {
     const insertCommonDbQuery = `
-      INSERT INTO Ac_Mas (Ac_Id) VALUES (@Ac_Id);
+      UPDATE Ac_Mas
+      SET Ac_Id = @Ac_Id
+      WHERE Ac_Id = (SELECT TOP 1 Ac_Id FROM Ac_Mas ORDER BY Ac_Id DESC)
     `;
     await tempPool.request().input("Ac_Id", sql.Int, newId).query(insertCommonDbQuery);
   } finally {

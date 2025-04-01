@@ -1,42 +1,58 @@
-// import prisma from "../prisma/client";
+import { pool } from "../config/dbConfig";
 
-// export const addFavorite = async (payload: any) => {
-//   const { userId, vegetableId } = payload;
+export const getAllItem = async () => {
+  const existingItems = await pool
+    .request()
+    .query(`SELECT * FROM Itm_Mas`);
+  return existingItems.recordset;
+};
 
-//   const existingFavorite = await prisma.userFavorites.findFirst({
-//     where: { userId: userId, vegetableId: Number(vegetableId) },
-//   });
+export const addFavorite = async (payload: any) => {
+  const { userId, itemId } = payload;
 
-//   if (existingFavorite) {
-//     throw new Error("Vegetable already in favorites");
-//   }
-//   const favorite = await prisma.userFavorites.create({
-//     data: {
-//       userId: userId,
-//       vegetableId: Number(vegetableId),
-//     },
-//   });
-//   return favorite;
-// };
+  const existingFavorite = await pool
+    .request()
+    .input("userId", userId)
+    .input("itemId", itemId)
+    .query(`SELECT * FROM [Itm_User_Fav] WHERE Ac_Id = @userId AND Itm_Id = @itemId`);
 
-// export const getFavorite = async (payload: any) => {
-//   const { userId } = payload;
+  if (existingFavorite.recordset.length > 0) {
+    throw new Error("Vegetable already in favorites");
+  }
 
-//   const favorites = await prisma.userFavorites.findMany({
-//     where: { userId: Number(userId) },
-//     include: { vegetable: true },
-//   });
-//   return favorites;
-// };
+  await pool
+    .request()
+    .input("userId", userId)
+    .input("itemId", itemId)
+    .query(`INSERT INTO [Itm_User_Fav] (Ac_Id, Itm_Id) VALUES (@userId, @itemId)`);
+};
 
-// export const removeFavorite = async (payload: any) => {
-//   const { userId, vegetableId } = payload;
 
-//   const deleted = await prisma.userFavorites.deleteMany({
-//     where: {
-//         userId: Number(userId),
-//         vegetableId: Number(vegetableId),
-//     },
-// });
-//   return deleted;
-// };
+export const getFavorite = async (payload: any) => {
+  const { userId } = payload;
+
+  const favorites = await pool
+    .request()
+    .input("userId", userId)
+    .query(`
+        SELECT UF.Id, UF.Ac_Id, UF.Itm_Id, 
+             IM.Itm_Code, IM.Itm_Name, IM.Sale_Rate, IM.Pur_Rate
+      FROM [Itm_User_Fav] UF
+      JOIN [Itm_Mas] IM ON UF.Itm_Id = IM.Itm_ID
+      WHERE UF.Ac_Id = @userId
+    `);
+
+  return favorites.recordset;
+};
+
+export const removeFavorite = async (payload: any) => {
+  const { userId, itemId } = payload;
+
+  const deleted = await pool
+    .request()
+    .input("userId", userId)
+    .input("itemId", itemId)
+    .query(`DELETE FROM [Itm_User_Fav] WHERE Ac_Id = @userId AND Itm_Id = @itemId`);
+
+  return deleted.rowsAffected;
+};
