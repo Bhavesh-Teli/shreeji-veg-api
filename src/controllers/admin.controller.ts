@@ -3,7 +3,14 @@ import { SendWhatsappMessage } from "../utils/whatsappApi";
 
 export const getUnapprovedUsers = async () => {
   try {
-    const result = await pool.request().query(`SELECT * FROM Ac_Mas WHERE Ac_Code IS NULL`);
+    const query = `
+      SELECT Id, Ac_Name, Mobile_No, Book_Pass,
+        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
+        State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac
+      FROM Ac_Mas 
+      WHERE Ac_Code IS NULL`;
+
+    const result = await pool.request().query(query);
 
     return result.recordset; // Returns the list of unapproved users
   } catch (error: any) {
@@ -24,7 +31,7 @@ export const approveUser = async (payload: any) => {
       .query("UPDATE Ac_Mas SET Ac_Code = @approvalCode WHERE Id = @userId");
 
     if (result.rowsAffected[0] === 0) throw new Error("User not found or already approved.");
-    
+
     const userResult = await transaction
       .request()
       .input("userId", sql.Int, userId)

@@ -104,7 +104,7 @@ export const login = async (payload: IUser) => {
 
     const user = result.recordset[0];
 
-    if (!user || user.Book_Pass !== Book_Pass) throw new Error("Invalid account name or password");
+    if (!user || user.Book_Pass.trim()!== Book_Pass) throw new Error("Invalid account name or password");
     if (!user.Ac_Code) throw new Error("Account is not approved by admin");
 
     const token = jwt.sign({ userId: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });

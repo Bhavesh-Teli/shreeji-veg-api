@@ -179,7 +179,7 @@ var login = async (payload) => {
   try {
     const result = await pool.request().input("Ac_Name", Ac_Name).query(`SELECT Id, Ac_Name, Book_Pass, Ac_Code FROM Ac_Mas WHERE Ac_Name = @Ac_Name`);
     const user = result.recordset[0];
-    if (!user || user.Book_Pass !== Book_Pass) throw new Error("Invalid account name or password");
+    if (!user || user.Book_Pass.trim() !== Book_Pass) throw new Error("Invalid account name or password");
     if (!user.Ac_Code) throw new Error("Account is not approved by admin");
     const token = import_jsonwebtoken.default.sign({ userId: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });
     const { Book_Pass: _, ...userWithoutPassword } = user;
@@ -237,7 +237,7 @@ var import_express2 = require("express");
 
 // src/controllers/favorite.controller.ts
 var getAllItem = async () => {
-  const existingItems = await pool.request().query(`SELECT * FROM Itm_Mas`);
+  const existingItems = await pool.request().query(`SELECT Itm_ID,Itm_Name,Sale_Rate FROM Itm_Mas`);
   return existingItems.recordset;
 };
 var addFavorite = async (payload) => {
@@ -360,7 +360,13 @@ var import_express3 = require("express");
 // src/controllers/admin.controller.ts
 var getUnapprovedUsers = async () => {
   try {
-    const result = await pool.request().query(`SELECT * FROM Ac_Mas WHERE Ac_Code IS NULL`);
+    const query = `
+      SELECT Id, Ac_Name, Mobile_No, Book_Pass,
+        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
+        State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac
+      FROM Ac_Mas 
+      WHERE Ac_Code IS NULL`;
+    const result = await pool.request().query(query);
     return result.recordset;
   } catch (error) {
     throw new Error("Error fetching unapproved users: " + error.message);

@@ -3,7 +3,7 @@ import { pool } from "../config/dbConfig";
 export const getAllItem = async () => {
   const existingItems = await pool
     .request()
-    .query(`SELECT * FROM Itm_Mas`);
+    .query(`SELECT Itm_ID,Itm_Name,Sale_Rate FROM Itm_Mas`);
   return existingItems.recordset;
 };
 
