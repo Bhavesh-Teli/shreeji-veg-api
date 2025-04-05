@@ -119,3 +119,14 @@ export const login = async (payload: IUser) => {
     throw new Error(`Login failed: ${error.message}`);
   }
 };
+
+export const getCurrentUser=async(userId:string)=>{
+  const result = await pool
+      .request()
+      .input("Id",userId)
+      .query(`SELECT  Id, Ac_Name, Mobile_No,
+        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
+        State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac FROM Ac_Mas WHERE Id = @Id`);
+      return result.recordset[0];
+}
+
