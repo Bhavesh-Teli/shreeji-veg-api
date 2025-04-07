@@ -121,6 +121,9 @@ export const login = async (payload: IUser) => {
 };
 
 export const getCurrentUser=async(userId:string)=>{
+  if(userId==="admin"){
+    return { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true };
+  }
   const result = await pool
       .request()
       .input("Id",userId)

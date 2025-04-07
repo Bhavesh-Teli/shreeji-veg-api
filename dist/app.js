@@ -191,6 +191,15 @@ var login = async (payload) => {
     throw new Error(`Login failed: ${error.message}`);
   }
 };
+var getCurrentUser = async (userId) => {
+  if (userId === "admin") {
+    return { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true };
+  }
+  const result = await pool.request().input("Id", userId).query(`SELECT  Id, Ac_Name, Mobile_No,
+        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
+        State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac FROM Ac_Mas WHERE Id = @Id`);
+  return result.recordset[0];
+};
 
 // src/utils/responseHelper.ts
 var successResponse = (res, data, message = "Success") => {
@@ -198,71 +207,6 @@ var successResponse = (res, data, message = "Success") => {
 };
 var errorResponse = (res, message = "Something went wrong", status = 400) => {
   res.status(status).json({ success: false, message });
-};
-
-// src/routes/auth.routes.ts
-var router = (0, import_express.Router)();
-router.post("/requestOTP", async (req, res) => {
-  try {
-    const mobileNo = req.body.mobileNo;
-    const result = await requestOTP(mobileNo);
-    return successResponse(res, result, "OTP sent successfully");
-  } catch (error) {
-    return errorResponse(res, error.message);
-  }
-});
-router.post("/register", async (req, res) => {
-  try {
-    const payload = req.body;
-    const enteredOTP = req.body.otp;
-    const result = await verifyOTPAndRegister(payload, enteredOTP);
-    return successResponse(res, result, "OTP verified successfully");
-  } catch (error) {
-    return errorResponse(res, error.message);
-  }
-});
-router.post("/login", async (req, res) => {
-  try {
-    const payload = req.body;
-    const result = await login(payload);
-    return successResponse(res, result, "Login successful.");
-  } catch (error) {
-    return errorResponse(res, error.message);
-  }
-});
-var auth_routes_default = router;
-
-// src/routes/favorite.routes.ts
-var import_express2 = require("express");
-
-// src/controllers/favorite.controller.ts
-var getAllItem = async () => {
-  const existingItems = await pool.request().query(`SELECT Itm_ID,Itm_Name,Sale_Rate FROM Itm_Mas`);
-  return existingItems.recordset;
-};
-var addFavorite = async (payload) => {
-  const { userId, itemId } = payload;
-  const existingFavorite = await pool.request().input("userId", userId).input("itemId", itemId).query(`SELECT * FROM [Itm_User_Fav] WHERE Ac_Id = @userId AND Itm_Id = @itemId`);
-  if (existingFavorite.recordset.length > 0) {
-    throw new Error("Vegetable already in favorites");
-  }
-  await pool.request().input("userId", userId).input("itemId", itemId).query(`INSERT INTO [Itm_User_Fav] (Ac_Id, Itm_Id) VALUES (@userId, @itemId)`);
-};
-var getFavorite = async (payload) => {
-  const { userId } = payload;
-  const favorites = await pool.request().input("userId", userId).query(`
-        SELECT UF.Id, UF.Ac_Id, UF.Itm_Id, 
-             IM.Itm_Code, IM.Itm_Name, IM.Sale_Rate, IM.Pur_Rate
-      FROM [Itm_User_Fav] UF
-      JOIN [Itm_Mas] IM ON UF.Itm_Id = IM.Itm_ID
-      WHERE UF.Ac_Id = @userId
-    `);
-  return favorites.recordset;
-};
-var removeFavorite = async (payload) => {
-  const { userId, itemId } = payload;
-  const deleted = await pool.request().input("userId", userId).input("itemId", itemId).query(`DELETE FROM [Itm_User_Fav] WHERE Ac_Id = @userId AND Itm_Id = @itemId`);
-  return deleted.rowsAffected;
 };
 
 // src/middleware/middleware.ts
@@ -304,6 +248,90 @@ var authorizeAdmin = (req, res, next) => {
   next();
 };
 
+// src/routes/auth.routes.ts
+var router = (0, import_express.Router)();
+router.post("/requestOTP", async (req, res) => {
+  try {
+    const mobileNo = req.body.mobileNo;
+    const result = await requestOTP(mobileNo);
+    return successResponse(res, result, "OTP sent successfully");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+});
+router.post("/register", async (req, res) => {
+  try {
+    const payload = req.body;
+    const enteredOTP = req.body.otp;
+    const result = await verifyOTPAndRegister(payload, enteredOTP);
+    return successResponse(res, result, "OTP verified successfully");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+});
+router.post("/login", async (req, res) => {
+  try {
+    const payload = req.body;
+    const result = await login(payload);
+    return successResponse(res, result, "Login successful.");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+});
+router.get("/getCurrentUser", authVerify, async (req, res) => {
+  try {
+    const payload = req.user.Id;
+    const result = await getCurrentUser(payload);
+    return successResponse(res, result, "Login successful.");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+});
+router.post("/logout", authVerify, async (req, res) => {
+  try {
+    res.clearCookie("Shreeji_Veg").status(200).json({
+      success: true,
+      message: "Logged out successfully."
+    });
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+});
+var auth_routes_default = router;
+
+// src/routes/favorite.routes.ts
+var import_express2 = require("express");
+
+// src/controllers/favorite.controller.ts
+var getAllItem = async () => {
+  const existingItems = await pool.request().query(`SELECT Itm_ID,Itm_Name,Sale_Rate FROM Itm_Mas`);
+  return existingItems.recordset;
+};
+var addFavorite = async (payload) => {
+  const { userId, itemId } = payload;
+  const existingFavorite = await pool.request().input("userId", userId).input("itemId", itemId).query(`SELECT * FROM [Itm_User_Fav] WHERE Ac_Id = @userId AND Itm_Id = @itemId`);
+  if (existingFavorite.recordset.length > 0) {
+    throw new Error("Vegetable already in favorites");
+  }
+  await pool.request().input("userId", userId).input("itemId", itemId).query(`INSERT INTO [Itm_User_Fav] (Ac_Id, Itm_Id) VALUES (@userId, @itemId)`);
+};
+var getFavorite = async (payload) => {
+  const { userId } = payload;
+  const favorites = await pool.request().input("userId", userId).query(`
+        SELECT UF.Id, UF.Ac_Id, UF.Itm_Id, 
+             IM.Itm_Code, IM.Itm_Name, IM.Sale_Rate, IM.Pur_Rate
+      FROM [Itm_User_Fav] UF
+      JOIN [Itm_Mas] IM ON UF.Itm_Id = IM.Itm_ID
+      WHERE UF.Ac_Id = @userId
+    `);
+  return favorites.recordset;
+};
+var removeFavorite = async (payload) => {
+  const { userId, itemId } = payload;
+  const deleted = await pool.request().input("userId", userId).input("itemId", itemId).query(`DELETE FROM [Itm_User_Fav] WHERE Ac_Id = @userId AND Itm_Id = @itemId`);
+  return deleted.rowsAffected;
+};
+
 // src/routes/favorite.routes.ts
 var router2 = (0, import_express2.Router)();
 router2.get("/getAllItem", async (req, res) => {
@@ -340,7 +368,7 @@ router2.get("/getFavorites", authVerify, async (req, res) => {
     return errorResponse(res, error.message);
   }
 });
-router2.get("/deleteFavorites", authVerify, async (req, res) => {
+router2.post("/deleteFavorites", authVerify, async (req, res) => {
   try {
     const payload = {
       userId: req.user.Id,

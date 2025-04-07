@@ -46,7 +46,7 @@ router.get("/getCurrentUser",authVerify,async (req, res) => {
     }
 });
 
-router.get("/logout",authVerify,async (req, res) => {
+router.post("/logout",authVerify,async (req, res) => {
     try {
         res.clearCookie("Shreeji_Veg").status(200).json({
             success: true,

@@ -39,7 +39,7 @@ router.get("/getFavorites", authVerify, async (req: Request, res: Response) => {
       return errorResponse(res, (error as Error).message);
     }
   });
-  router.get("/deleteFavorites", authVerify, async (req: Request, res: Response) => {
+  router.post("/deleteFavorites", authVerify, async (req: Request, res: Response) => {
     try {
       const payload = {
         userId: req.user.Id,
