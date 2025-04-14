@@ -5,11 +5,11 @@ export const SendWhatsappMessage = (mobileNo:string,message:string) => {
     console.log(`Executing command: ${cmd}`); 
     exec(cmd, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error sending OTP: ${error.message}`);
+        throw new Error(`Error sending WhatsApp message: ${error.message}`);
         return;
       }
       if (stderr) {
-        console.error(`STDERR: ${stderr}`);
+        throw new Error(`STDERR while sending WhatsApp message: ${stderr}`);
         return;
       }
       console.log(`OTP sent successfully: ${stdout}`);

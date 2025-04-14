@@ -27,31 +27,30 @@ router.post("/addToFavorites", authVerify, async (req: Request, res: Response) =
   }
 });
 router.get("/getFavorites", authVerify, async (req: Request, res: Response) => {
-    try {
-      const payload = {
-        userId: req.user.Id,
-      };
-      const result = await getFavorite(payload);
-      console.log(result)
-      return successResponse(res, result, "Fetched favorites successfully");
-    } catch (error) {
-      console.log(error)
-      return errorResponse(res, (error as Error).message);
-    }
-  });
-  router.post("/deleteFavorites", authVerify, async (req: Request, res: Response) => {
-    try {
-      const payload = {
-        userId: req.user.Id,
-        ...req.body,
-      };
-      const result = await removeFavorite(payload);
-      return successResponse(res, result, "Removed from favorites");
-    } catch (error) {
-      return errorResponse(res, (error as Error).message);
-    }
-  });
-  
+  try {
+    const payload = {
+      userId: req.user.Id,
+    };
+    const result = await getFavorite(payload);
+    return successResponse(res, result, "Fetched favorites successfully");
+  } catch (error) {
+    console.log(error)
+    return errorResponse(res, (error as Error).message);
+  }
+});
+router.post("/deleteFavorites", authVerify, async (req: Request, res: Response) => {
+  try {
+    const payload = {
+      userId: req.user.Id,
+      ...req.body,
+    };
+    const result = await removeFavorite(payload);
+    return successResponse(res, result, "Removed from favorites");
+  } catch (error) {
+    return errorResponse(res, (error as Error).message);
+  }
+});
+
 
 
 export default router;

@@ -26,8 +26,9 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
   if (!Ac_Name || !Mobile_No || !Book_Pass || !enteredOTP) throw new Error("All fields including OTP are required");
 
   const storedOTP = otpStorage.get(Mobile_No);
-  if (!storedOTP || storedOTP.otp !== enteredOTP || storedOTP.expiresAt < Date.now()) throw new Error("Invalid or expired OTP");
-  otpStorage.delete(Mobile_No);
+  if (!storedOTP || storedOTP.expiresAt < Date.now()) throw new Error("Expired OTP");
+  if (storedOTP.otp !== enteredOTP) throw new Error("Invalid OTP");
+
 
   // Begin transaction for user registration
   const transaction = pool.transaction();
@@ -45,7 +46,6 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
     }
 
     const newId = (await getLastIdFromCommonDB()) + 1;
-    console.log(newId);
 
     await transaction
       .request()
@@ -77,6 +77,8 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
     await insertIntoCommonDB(newId);
     await transaction.commit();
 
+    otpStorage.delete(Mobile_No);
+
     const { Book_Pass: _, ...userWithoutPassword } = payload;
     return { message: "User registered successfully", user: userWithoutPassword };
   } catch (error: any) {
@@ -95,7 +97,7 @@ export const login = async (payload: IUser) => {
       token,
     };
   }
-  
+
   try {
     const result = await pool
       .request()
@@ -104,7 +106,7 @@ export const login = async (payload: IUser) => {
 
     const user = result.recordset[0];
 
-    if (!user || user.Book_Pass.trim()!== Book_Pass) throw new Error("Invalid account name or password");
+    if (!user || user.Book_Pass.trim() !== Book_Pass) throw new Error("Invalid account name or password");
     if (!user.Ac_Code) throw new Error("Account is not approved by admin");
 
     const token = jwt.sign({ userId: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });
@@ -120,16 +122,16 @@ export const login = async (payload: IUser) => {
   }
 };
 
-export const getCurrentUser=async(userId:string)=>{
-  if(userId==="admin"){
+export const getCurrentUser = async (userId: string) => {
+  if (userId === "admin") {
     return { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true };
   }
   const result = await pool
-      .request()
-      .input("Id",userId)
-      .query(`SELECT  Id, Ac_Name, Mobile_No,
+    .request()
+    .input("Id", userId)
+    .query(`SELECT  Id, Ac_Name, Mobile_No,
         Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
         State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac FROM Ac_Mas WHERE Id = @Id`);
-      return result.recordset[0];
+  return result.recordset[0];
 }
 

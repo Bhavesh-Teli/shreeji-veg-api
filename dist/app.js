@@ -108,11 +108,11 @@ var SendWhatsappMessage = (mobileNo, message) => {
   console.log(`Executing command: ${cmd}`);
   (0, import_child_process.exec)(cmd, (error, stdout, stderr) => {
     if (error) {
-      console.error(`Error sending OTP: ${error.message}`);
+      throw new Error(`Error sending WhatsApp message: ${error.message}`);
       return;
     }
     if (stderr) {
-      console.error(`STDERR: ${stderr}`);
+      throw new Error(`STDERR while sending WhatsApp message: ${stderr}`);
       return;
     }
     console.log(`OTP sent successfully: ${stdout}`);
@@ -135,8 +135,8 @@ var verifyOTPAndRegister = async (payload, enteredOTP) => {
   const { Ac_Name, Mobile_No, Book_Pass } = payload;
   if (!Ac_Name || !Mobile_No || !Book_Pass || !enteredOTP) throw new Error("All fields including OTP are required");
   const storedOTP = otpStorage.get(Mobile_No);
-  if (!storedOTP || storedOTP.otp !== enteredOTP || storedOTP.expiresAt < Date.now()) throw new Error("Invalid or expired OTP");
-  otpStorage.delete(Mobile_No);
+  if (!storedOTP || storedOTP.expiresAt < Date.now()) throw new Error("Expired OTP");
+  if (storedOTP.otp !== enteredOTP) throw new Error("Invalid OTP");
   const transaction = pool.transaction();
   await transaction.begin();
   try {
@@ -145,7 +145,6 @@ var verifyOTPAndRegister = async (payload, enteredOTP) => {
       throw new Error("Ac_Name or Mobile_No already exists");
     }
     const newId = await getLastIdFromCommonDB() + 1;
-    console.log(newId);
     await transaction.request().input("Id", newId).input("Ac_Name", Ac_Name).input("Mobile_No", Mobile_No).input("Book_Pass", Book_Pass).input("Main_Grp_Id", 7).input("Sub_Grp_Id", 3).input("Defa", 0).input("Cancel_Bill_Ac", 0).input("State_Name1", "Gujarat").input("State_Code", "24").input("Party_Type", "Local").input("Active", 1).input("Cash_Party", 1).input("Our_Shop_Ac", 0).query(`
       INSERT INTO Ac_Mas (
         Id, Ac_Name, Mobile_No, Book_Pass,
@@ -159,6 +158,7 @@ var verifyOTPAndRegister = async (payload, enteredOTP) => {
     `);
     await insertIntoCommonDB(newId);
     await transaction.commit();
+    otpStorage.delete(Mobile_No);
     const { Book_Pass: _, ...userWithoutPassword } = payload;
     return { message: "User registered successfully", user: userWithoutPassword };
   } catch (error) {
@@ -361,7 +361,6 @@ router2.get("/getFavorites", authVerify, async (req, res) => {
       userId: req.user.Id
     };
     const result = await getFavorite(payload);
-    console.log(result);
     return successResponse(res, result, "Fetched favorites successfully");
   } catch (error) {
     console.log(error);
