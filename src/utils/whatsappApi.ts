@@ -1,7 +1,7 @@
 import { exec } from "child_process";
 
 export const SendWhatsappMessage = (mobileNo:string,message:string) => {
-    const cmd = `D:\\WhatsApp-enoify.app\\gsc-wapp.exe T N ${process.env.WHATSAPP_API_KEY} 91${mobileNo} "${message}"`;
+    const cmd = `${process.env.EXEC_FILE_PATH} T N ${process.env.WHATSAPP_API_KEY} 91${mobileNo} "${message}"`;
     console.log(`Executing command: ${cmd}`); 
     exec(cmd, (error, stdout, stderr) => {
       if (error) {
