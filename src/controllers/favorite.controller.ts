@@ -35,10 +35,18 @@ export const getFavorite = async (payload: any) => {
     .request()
     .input("userId", userId)
     .query(`
-        SELECT UF.Id, UF.Ac_Id, UF.Itm_Id, 
-             IM.Itm_Code, IM.Itm_Name, IM.Sale_Rate, IM.Pur_Rate
+        SELECT 
+        UF.Id, 
+        UF.Ac_Id, 
+        UF.Itm_Id, 
+        IM.Itm_Code, 
+        IM.Itm_Name, 
+        IM.Sale_Rate, 
+        IM.Pur_Rate,
+        UM.Uni_Name
       FROM [Itm_User_Fav] UF
       JOIN [Itm_Mas] IM ON UF.Itm_Id = IM.Itm_ID
+      JOIN [Uni_Mas] UM ON IM.Uni_ID = UM.Uni_ID
       WHERE UF.Ac_Id = @userId
     `);
 
