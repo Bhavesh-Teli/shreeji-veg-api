@@ -19,23 +19,23 @@ export const getUnapprovedUsers = async () => {
 };
 
 export const approveUser = async (payload: any) => {
-  const { userId, approvalCode } = payload;
+  const { Ac_Id, approvalCode } = payload;
   const transaction = pool.transaction();
   try {
     await transaction.begin();
 
     const result = await transaction
       .request()
-      .input("userId", sql.Int, userId)
+      .input("Ac_Id", sql.Int, Ac_Id)
       .input("approvalCode", sql.NVarChar, approvalCode)
-      .query("UPDATE Ac_Mas SET Ac_Code = @approvalCode WHERE Id = @userId");
+      .query("UPDATE Ac_Mas SET Ac_Code = @approvalCode WHERE Id = @Ac_Id");
 
     if (result.rowsAffected[0] === 0) throw new Error("User not found or already approved.");
 
     const userResult = await transaction
       .request()
-      .input("userId", sql.Int, userId)
-      .query("SELECT Mobile_No FROM Ac_Mas WHERE Id = @userId");
+      .input("Ac_Id", sql.Int, Ac_Id)
+      .query("SELECT Mobile_No FROM Ac_Mas WHERE Id = @Ac_Id");
 
     const mobileNo = userResult.recordset[0]?.Mobile_No;
 
@@ -46,7 +46,7 @@ export const approveUser = async (payload: any) => {
 
     await transaction.commit();
 
-    return { message: "User approved successfully", userId, approvalCode };
+    return { message: "User approved successfully", Ac_Id, approvalCode };
   } catch (error: any) {
     await transaction.rollback();
     throw new Error(error.message || "Something went wrong while approving the user.");
@@ -54,9 +54,9 @@ export const approveUser = async (payload: any) => {
 };
 
 export const rejectUser = async (payload: any) => {
-  const { userId } = payload;
+  const { Ac_Id } = payload;
   // await prisma.ac_Mas.update({
-  //     where: { Id: Number(userId) },
+  //     where: { Id: Number(Ac_Id) },
   //     data: { Ac_Code: null },
   // });
 };

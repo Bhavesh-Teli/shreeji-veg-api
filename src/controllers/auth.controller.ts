@@ -91,7 +91,7 @@ export const login = async (payload: IUser) => {
   const { Ac_Name, Book_Pass } = payload;
   if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
   if (Ac_Name === process.env.ADMIN_NAME && Book_Pass === process.env.ADMIN_PASSWORD) {
-    const token = jwt.sign({ userId: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ Ac_Id: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
     return {
       user: { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true },
       token,
@@ -109,7 +109,7 @@ export const login = async (payload: IUser) => {
     if (!user || user.Book_Pass.trim() !== Book_Pass) throw new Error("Invalid account name or password");
     if (!user.Ac_Code) throw new Error("Account is not approved by admin");
 
-    const token = jwt.sign({ userId: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ Ac_Id: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     const { Book_Pass: _, ...userWithoutPassword } = user;
 
@@ -122,13 +122,13 @@ export const login = async (payload: IUser) => {
   }
 };
 
-export const getCurrentUser = async (userId: string) => {
-  if (userId === "admin") {
+export const getCurrentUser = async (Ac_Id: string) => {
+  if (Ac_Id === "admin") {
     return { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true };
   }
   const result = await pool
     .request()
-    .input("Id", userId)
+    .input("Id", Ac_Id)
     .query(`SELECT  Id, Ac_Name, Mobile_No,
         Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
         State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac FROM Ac_Mas WHERE Id = @Id`);

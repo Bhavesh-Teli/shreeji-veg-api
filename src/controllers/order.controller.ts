@@ -1,73 +1,14 @@
 import { pool, sql } from "../config/dbConfig";
-import { ConnectionPool } from "mssql";
-
-// Function to get the next auto-number
-export const autoNumber = async (
-  pool: ConnectionPool,
-  tableName: string,
-  fieldName: string,
-  mSQL: string = ''
-): Promise<number> => {
-  const condition = mSQL ? `WHERE ${mSQL}` : '';
-  const query = `SELECT MAX(ISNULL(${fieldName}, 0)) AS LastNo FROM ${tableName} ${condition}`;
-
-  try {
-    const result = await pool.request().query(query);
-    return (result.recordset[0]?.LastNo ?? 0) + 1;
-  } catch (error) {
-    console.error("Error in autoNumber:", error);
-    throw error;
-  }
-};
-
-// Function to get count and increment it
-export const getCount = async (
-  pool: ConnectionPool,
-  tableName: string,
-  mSQL: string = ''
-): Promise<number> => {
-  const condition = mSQL ? `WHERE ${mSQL}` : '';
-  const query = `SELECT COUNT(*) AS TotalCount FROM ${tableName} ${condition}`;
-
-  try {
-    const result = await pool.request().query(query);
-    return (result.recordset[0]?.TotalCount ?? 0) + 1;
-  } catch (error) {
-    console.error("Error in getCount:", error);
-    throw error;
-  }
-};
+import { autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
 
 
-export const findRecReturn = async (
-  pool: ConnectionPool,
-  tableName: string,
-  selectField: string,
-  whereCondition?: string
-): Promise<string | boolean> => {
-  let query = `SELECT ${selectField} FROM ${tableName}`;
-  if (whereCondition && whereCondition.trim() !== '') {
-    query += ` WHERE ${whereCondition}`;
-  }
+const bookId = 25;
+const bookAcId = 60;
+const Ac_Id = 1;
+const branchId = 1;
+const areaId = 1;
 
-  try {
-    const result = await pool.request().query(query);
-    const rows = result.recordset;
 
-    if (rows && rows.length > 0) {
-      const value = rows[0][selectField]; // Access the first row and field
-      if (value === null || value === undefined) {
-        return false; // Return false if the value is null or undefined
-      }
-      return String(value).trim(); // Trim the result and return as string
-    } else {
-      return false; // No rows found, return false
-    }
-  } catch (error) {
-    console.error('Error executing query:', error);
-    return false; // Return false in case of error
-  }
-};
 
 
 // Insert into Sale_Pur_Main
@@ -83,13 +24,7 @@ export const insertSalePurMain = async (
 ) => {
   try {
 
-
     // Static values
-    const bookId = 25;
-    const bookAcId = 60;
-    const userId = 1;
-    const branchId = 1;
-    const areaId = 1;
 
 
     const sysTimeFormatted = new Date().toTimeString().slice(0, 8);
@@ -161,7 +96,7 @@ export const insertSalePurMain = async (
       .input('Cash_Bill', sql.Bit, false)
       .input('Cancel_Bill', sql.Bit, false)
       .input('Order_Close', sql.Bit, false)
-      .input('USER_ID', sql.Int, userId)
+      .input('USER_ID', sql.Int, Ac_Id)
       .input('Sys_Date', sql.DateTime, Bill_Date)
       .input('Sys_Time', sql.VarChar(8), sysTimeFormatted)
       .input('Area_Id', sql.Int, areaId)
@@ -214,15 +149,11 @@ export const insertSalePurDetail = async (
         .query(`DELETE FROM Sale_Pur_Detail WHERE ID = ${id} AND Type = 'Purchase Order'`);
     }
 
-    const branchId = 1;
-    const bookAcId = 60;
-    const bookId = 25;
-    const areaId = 1;
 
-    for (let ii = 0; ii < details.length; ii++) {
-      const row = details[ii];
+    for (let i = 0; i < details.length; i++) {
+      const row = details[i];
 
-      const srNo = ii + 1;
+      const srNo = i + 1;
       const itm_Id = row.Itm_Id || 0;
       const inward = row.Inward || 0;
       const qty = inward;
@@ -430,7 +361,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
     }
 
     const mainIds = mainResult.map(record => record.Bill_No);
-    console.log("mainIds",mainIds)
+    console.log("mainIds", mainIds)
 
     const detailResult = (await pool.request()
       .query(`
@@ -446,7 +377,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
       Bill_Date: main.Bill_Date,
       Details: detailResult.filter(detail => detail.Bill_No === main.Bill_No)
     }));
-    console.log("combine data",combinedData);
+    console.log("combine data", combinedData);
     return combinedData;
 
   } catch (error) {

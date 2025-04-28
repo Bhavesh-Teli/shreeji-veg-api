@@ -16,7 +16,7 @@ router.get("/getAllItem", async (req: Request, res: Response) => {
 router.post("/addToFavorites", authVerify, async (req: Request, res: Response) => {
   try {
     const payload = {
-      userId: req.user.Id,
+      Ac_Id: req.user.Id,
       ...req.body,
     };
     const result = await addFavorite(payload);
@@ -29,7 +29,7 @@ router.post("/addToFavorites", authVerify, async (req: Request, res: Response) =
 router.get("/getFavorites", authVerify, async (req: Request, res: Response) => {
   try {
     const payload = {
-      userId: req.user.Id,
+      Ac_Id: req.user.Id,
     };
     const result = await getFavorite(payload);
     return successResponse(res, result, "Fetched favorites successfully");
@@ -41,7 +41,7 @@ router.get("/getFavorites", authVerify, async (req: Request, res: Response) => {
 router.post("/deleteFavorites", authVerify, async (req: Request, res: Response) => {
   try {
     const payload = {
-      userId: req.user.Id,
+      Ac_Id: req.user.Id,
       ...req.body,
     };
     const result = await removeFavorite(payload);

@@ -26,12 +26,12 @@ export const authVerify = async (req: Request, res: Response, next: NextFunction
 
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
 
-    if (decodedToken.userId === "admin") {
+    if (decodedToken.Ac_Id === "admin") {
       req.user = { Id: "admin", Ac_Name: process.env.ADMIN_NAME!, isAdmin: true };
       return next();
     }
 
-    const result = await pool.request().input("userId", sql.Int, decodedToken.userId).query("SELECT * FROM Ac_Mas WHERE Id = @userId");
+    const result = await pool.request().input("Ac_Id", sql.Int, decodedToken.Ac_Id).query("SELECT * FROM Ac_Mas WHERE Id = @Ac_Id");
 
     if (result.recordset.length === 0) {
       res.status(401).json({ error: "Invalid User Token" });
