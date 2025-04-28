@@ -6,4 +6,4 @@ dist
 # Keep environment variables out of version control
 .env
 package-lock.json
-NotificationApp_Log_01042025.txt
+NotificationApp_Log*.txt
