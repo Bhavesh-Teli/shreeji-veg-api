@@ -16,7 +16,7 @@ router.post("/getLrNo", authVerify, async (req, res) => {
   }
 });
 
-router.post("getBillNo",authVerify,async (req,res)=>{
+router.get("/getBillNo",authVerify,async (req,res)=>{
     try {
         const Bill_No=await getBillNo();
         return successResponse(res,{Bill_No},"Bill No fetched successfully.");

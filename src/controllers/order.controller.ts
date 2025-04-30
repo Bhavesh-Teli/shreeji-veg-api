@@ -25,17 +25,20 @@ export const insertSalePurMain = async (
   Bill_Date: string,
   Our_Shop_Ac: number
 ) => {
+  let transaction: sql.Transaction | null = null;
+
   try {
+    transaction = new sql.Transaction(pool);
+    await transaction.begin();
     const sysTimeFormatted = new Date().toTimeString().slice(0, 8);
-  
+
 
     // Generate auto numbers
     const id = await autoNumber(pool, "Sale_Pur_Main", "Id", "Type <> 'Purchase Old' AND Type <> 'Sale Old'");
     const typeId = await autoNumber(pool, "Sale_Pur_Main", "Type_Id", `Type = '${Type}'`);
     const bookVNo = await autoNumber(pool, "Sale_Pur_Main", "Book_V_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId}`);
     const vNo = await autoNumber(pool, "Sale_Pur_Main", "V_No", `Type = '${Type}'`);
-    // const billNo = await autoNumber(pool, "Sale_Pur_Main", "Bill_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId} AND Branch_Id = ${branchId}`);
- 
+
 
     // Insert Query
     const insertQuery = `
@@ -61,7 +64,7 @@ export const insertSalePurMain = async (
     `;
 
     // Request object directly from the pool
-    const request = pool
+    const request = transaction
       .request()
       .input("Id", sql.Int, id)
       .input("Type_Id", sql.Int, typeId)
@@ -105,10 +108,11 @@ export const insertSalePurMain = async (
     await request.query(insertQuery);
 
     await insertSalePurDetail(mode, details, Ac_Id, Ac_Code, id, typeId, Order_Count, Bill_No, Bill_Date, Our_Shop_Ac);
-
+    await transaction.commit();
     console.log("✅ Data inserted successfully into Sale_Pur_Main!");
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error inserting into Sale_Pur_Main:", error);
+    if (transaction !== null) await transaction.rollback(); // rollback safely
     throw error;
   }
 };
@@ -145,7 +149,7 @@ export const insertSalePurDetail = async (
       const srNo = i + 1;
       const itm_Id = row.Itm_Id || 0;
       const inward = row.Inward || 0;
-      const uni_Id = row.Uni_ID || 0;
+      const Uni_ID = row.Uni_ID || 0;
 
       const itmName = row.Itm_Name?.trim() || "";
       // Find additional fields
@@ -161,7 +165,7 @@ export const insertSalePurDetail = async (
 
       const form_Id = await findRecReturn(pool, "Itm_Mas", "Sort_Index", `Itm_Id = ${itm_Id}`);
 
-      const mUniName = await findRecReturn(pool, "Uni_Mas", "Uni_Name", `Uni_ID = ${uni_Id}`);
+      const mUniName = await findRecReturn(pool, "Uni_Mas", "Uni_Name", `Uni_ID = ${Uni_ID}`);
       if (!mUniName) {
         throw new Error("Unit Not Found In Master...");
       }
@@ -196,7 +200,7 @@ export const insertSalePurDetail = async (
         .input("Inward", sql.Decimal(18, 3), inward)
         .input("Qty", sql.Decimal(18, 3), inward)
         .input("Rate", sql.Decimal(18, 2), 0)
-        .input("Uni_ID", sql.Int, uni_Id)
+        .input("Uni_ID", sql.Int, Uni_ID)
         .input("Amt", sql.Decimal(18, 2), 0)
         .input("Gross_Amt", sql.Decimal(18, 2), 0)
         .input("Gross_Rate", sql.Decimal(18, 2), 0)
@@ -345,7 +349,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
     const detailResult = (
       await pool.request().query(`
       SELECT 
-        Bill_No, Itm_Id, Qty, Uni_Id
+        Bill_No, Itm_Id, Qty, Uni_ID
       FROM Sale_Pur_Detail
       WHERE Bill_No IN (${mainIds.join(",")})
     `)

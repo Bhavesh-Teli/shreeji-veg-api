@@ -3,7 +3,7 @@ import { pool } from "../config/dbConfig";
 export const getAllItem = async () => {
   const existingItems = await pool
     .request()
-    .query(`SELECT Itm_ID,Itm_Name,Sale_Rate FROM Itm_Mas`);
+    .query(`SELECT Itm_ID,Itm_Name,Sale_Rate,Uni_ID FROM Itm_Mas`);
   return existingItems.recordset;
 };
 
@@ -43,6 +43,7 @@ export const getFavorite = async (payload: any) => {
         IM.Itm_Name, 
         IM.Sale_Rate, 
         IM.Pur_Rate,
+        IM.Uni_ID,
         UM.Uni_Name
       FROM [Itm_User_Fav] UF
       JOIN [Itm_Mas] IM ON UF.Itm_Id = IM.Itm_ID
