@@ -90,7 +90,7 @@ router.post("/insertSalePurDetail", authVerify, async (req, res) => {
 
 
 router.get("/OrderData", authVerify, async (req, res) => {
-  const { fromDate, toDate } = req.query;
+  const { fromDate, toDate,Ac } = req.query;
   const { isAdmin, Id: Ac_Id } = req.user;
   try {
     const result = await getOrderData({ fromDate, toDate, Ac_Id, isAdmin });
