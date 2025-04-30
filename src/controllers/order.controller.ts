@@ -1,45 +1,41 @@
 import { pool, sql } from "../config/dbConfig";
 import { autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
 
-
+// Static values
 const bookId = 25;
 const bookAcId = 60;
-const Ac_Id = 1;
 const branchId = 1;
-const areaId = 1;
+const areaId = 0;
+const USER_ID = 1;
+const Type = "Purchase Order";
 
-
-
+export const getLrNo = async (Ac_Id: number, Bill_Date: string) =>
+  await getCount(pool, "Sale_Pur_Main", `Ac_Id = ${Ac_Id} AND Bill_Date = '${Bill_Date}'`);
+export const getBillNo = async () =>
+  await autoNumber(pool, "Sale_Pur_Main", "Bill_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId} AND Branch_Id = ${branchId}`);
 
 // Insert into Sale_Pur_Main
 export const insertSalePurMain = async (
-  mode: 'add' | 'edit',
-  Order_SrNo: number,
+  mode: "add" | "edit",
   Ac_Id: number,
   Ac_Code: string,
+  Order_Count: number,
+  Bill_No: number,
   details: SalePurDetailRow[],
   Bill_Date: string,
   Our_Shop_Ac: number
-
 ) => {
   try {
-
-    // Static values
-
-
     const sysTimeFormatted = new Date().toTimeString().slice(0, 8);
-    const Type = "Purchase Order";
+  
 
     // Generate auto numbers
     const id = await autoNumber(pool, "Sale_Pur_Main", "Id", "Type <> 'Purchase Old' AND Type <> 'Sale Old'");
     const typeId = await autoNumber(pool, "Sale_Pur_Main", "Type_Id", `Type = '${Type}'`);
     const bookVNo = await autoNumber(pool, "Sale_Pur_Main", "Book_V_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId}`);
     const vNo = await autoNumber(pool, "Sale_Pur_Main", "V_No", `Type = '${Type}'`);
-    const billNo = await autoNumber(pool, "Sale_Pur_Main", "Bill_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId} AND Branch_Id = ${branchId}`);
-    // const Manu_Order_Close = await findRecReturn(pool, "Ac_Mas", "Our_Shop_Ac", `Id=${Ac_Id}`);
-
-    // Get LR_No using getCount
-    const lrNo = await getCount(pool, "Sale_Pur_Main", `Ac_Id = ${Ac_Id} AND Bill_Date = '${Bill_Date}'`);
+    // const billNo = await autoNumber(pool, "Sale_Pur_Main", "Bill_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId} AND Branch_Id = ${branchId}`);
+ 
 
     // Insert Query
     const insertQuery = `
@@ -50,7 +46,7 @@ export const insertSalePurMain = async (
         Round_Off, Net_Amt, Net_Amt1, Total_Disc_Amt, Asses_Val,
         AmtInWord, Ac_Id, Remark, Type, mem_no, Pay_Mode,
         Cash_Bill, Cancel_Bill, Order_Close, USER_ID,
-        ${mode === 'add' ? "Sys_Date_Add, Sys_Time_Add" : "Sys_Date_Edit, Sys_Time_Edit"},
+        ${mode === "add" ? "Sys_Date_Add, Sys_Time_Add" : "Sys_Date_Edit, Sys_Time_Edit"},
         Area_Id, Branch_ID, Bala_Amt, LR_No,Manu_Order_Close
       ) VALUES (
         @Id, @Type_Id, @Book_V_No, @V_No, @Book_Id, @Book_Ac_Id,
@@ -65,62 +61,50 @@ export const insertSalePurMain = async (
     `;
 
     // Request object directly from the pool
-    const request = pool.request()
-      .input('Id', sql.Int, id)
-      .input('Type_Id', sql.Int, typeId)
-      .input('Book_V_No', sql.Int, bookVNo)
-      .input('V_No', sql.Int, vNo)
-      .input('Book_Id', sql.Int, bookId)
-      .input('Book_Ac_Id', sql.Int, bookAcId)
-      .input('Bill_No', sql.Int, billNo)
-      .input('Bill_NoP', sql.NVarChar, '')
-      .input('Bill_NoS', sql.NVarChar, '')
-      .input('Full_Bill_No', sql.NVarChar, `${billNo}`)
-      .input('Bill_Type', sql.NVarChar, `${Ac_Code}-${lrNo}`)
-      .input('Bill_Date', sql.DateTime, Bill_Date)
-      .input('Gross_Amt', sql.Decimal(18, 2), 0)
-      .input('Total_Amount', sql.Decimal(18, 2), 0)
-      .input('Total_Qty', sql.Decimal(18, 2), 0)
-      .input('Total_Sundry_Disc_Amt', sql.Decimal(18, 2), 0)
-      .input('Round_Off', sql.Decimal(18, 2), 0)
-      .input('Net_Amt', sql.Decimal(18, 2), 0)
-      .input('Net_Amt1', sql.Decimal(18, 2), 0)
-      .input('Total_Disc_Amt', sql.Decimal(18, 2), 0)
-      .input('Asses_Val', sql.Decimal(18, 2), 0)
-      .input('AmtInWord', sql.NVarChar, 'Zero Only')
-      .input('Ac_Id', sql.Int, Ac_Id)
-      .input('Remark', sql.NVarChar, '')
-      .input('Type', sql.NVarChar, 'Purchase Order')
-      .input('mem_no', sql.NVarChar, '')
-      .input('Pay_Mode', sql.NVarChar, '')
-      .input('Cash_Bill', sql.Bit, false)
-      .input('Cancel_Bill', sql.Bit, false)
-      .input('Order_Close', sql.Bit, false)
-      .input('USER_ID', sql.Int, Ac_Id)
-      .input('Sys_Date', sql.DateTime, Bill_Date)
-      .input('Sys_Time', sql.VarChar(8), sysTimeFormatted)
-      .input('Area_Id', sql.Int, areaId)
-      .input('Branch_ID', sql.Int, branchId)
-      .input('Bala_Amt', sql.Decimal(18, 2), 0)
-      .input('LR_No', sql.Int, lrNo)
-      .input('Manu_Order_Close', sql.Bit, Our_Shop_Ac);
+    const request = pool
+      .request()
+      .input("Id", sql.Int, id)
+      .input("Type_Id", sql.Int, typeId)
+      .input("Book_V_No", sql.Int, bookVNo)
+      .input("V_No", sql.Int, vNo)
+      .input("Book_Id", sql.Int, bookId)
+      .input("Book_Ac_Id", sql.Int, bookAcId)
+      .input("Bill_No", sql.Int, Bill_No)
+      .input("Bill_NoP", sql.NVarChar, "")
+      .input("Bill_NoS", sql.NVarChar, "")
+      .input("Full_Bill_No", sql.NVarChar, `${Bill_No}`)
+      .input("Bill_Type", sql.NVarChar, `${Ac_Code}-${Order_Count}`)
+      .input("Bill_Date", sql.DateTime, Bill_Date)
+      .input("Gross_Amt", sql.Decimal(18, 2), 0)
+      .input("Total_Amount", sql.Decimal(18, 2), 0)
+      .input("Total_Qty", sql.Decimal(18, 2), 0)
+      .input("Total_Sundry_Disc_Amt", sql.Decimal(18, 2), 0)
+      .input("Round_Off", sql.Decimal(18, 2), 0)
+      .input("Net_Amt", sql.Decimal(18, 2), 0)
+      .input("Net_Amt1", sql.Decimal(18, 2), 0)
+      .input("Total_Disc_Amt", sql.Decimal(18, 2), 0)
+      .input("Asses_Val", sql.Decimal(18, 2), 0)
+      .input("AmtInWord", sql.NVarChar, "Zero Only")
+      .input("Ac_Id", sql.Int, Ac_Id)
+      .input("Remark", sql.NVarChar, "")
+      .input("Type", sql.NVarChar, "Purchase Order")
+      .input("mem_no", sql.NVarChar, "")
+      .input("Pay_Mode", sql.NVarChar, "Party")
+      .input("Cash_Bill", sql.Bit, false)
+      .input("Cancel_Bill", sql.Bit, false)
+      .input("Order_Close", sql.Bit, false)
+      .input("USER_ID", sql.Int, USER_ID)
+      .input("Sys_Date", sql.DateTime, Bill_Date) //dATE NOW
+      .input("Sys_Time", sql.VarChar(8), sysTimeFormatted)
+      .input("Area_Id", sql.Int, areaId)
+      .input("Branch_ID", sql.Int, branchId)
+      .input("Bala_Amt", sql.Decimal(18, 2), 0)
+      .input("LR_No", sql.Int, Order_Count)
+      .input("Manu_Order_Close", sql.Bit, Our_Shop_Ac);
 
     await request.query(insertQuery);
 
-    await insertSalePurDetail(
-      mode,
-      details,
-      Ac_Id,
-      Ac_Code,
-      id,
-      typeId,
-      Order_SrNo,
-      billNo,
-      Bill_Date,
-      Our_Shop_Ac
-    );
-
-
+    await insertSalePurDetail(mode, details, Ac_Id, Ac_Code, id, typeId, Order_Count, Bill_No, Bill_Date, Our_Shop_Ac);
 
     console.log("✅ Data inserted successfully into Sale_Pur_Main!");
   } catch (error) {
@@ -128,9 +112,6 @@ export const insertSalePurMain = async (
     throw error;
   }
 };
-
-
-
 
 interface SalePurDetailRow {
   Itm_Id: number;
@@ -140,15 +121,23 @@ interface SalePurDetailRow {
 }
 
 export const insertSalePurDetail = async (
-  mode: 'add' | 'edit', details: SalePurDetailRow[], Ac_Id: number, Ac_Code: string, id: number, typeId: number, Order_SrNo: number, Bill_No: number, Bill_Date: string, Our_Shop_Ac: number) => {
+  mode: "add" | "edit",
+  details: SalePurDetailRow[],
+  Ac_Id: number,
+  Ac_Code: string,
+  id: number,
+  typeId: number,
+  Order_Count: number,
+  Bill_No: number,
+  Bill_Date: string,
+  Our_Shop_Ac: number
+) => {
   try {
     console.log("enter in insert sale put detail");
 
     if (mode === "edit") {
-      await pool.request()
-        .query(`DELETE FROM Sale_Pur_Detail WHERE ID = ${id} AND Type = 'Purchase Order'`);
+      await pool.request().query(`DELETE FROM Sale_Pur_Detail WHERE ID = ${id} AND Type = 'Purchase Order'`);
     }
-
 
     for (let i = 0; i < details.length; i++) {
       const row = details[i];
@@ -156,34 +145,31 @@ export const insertSalePurDetail = async (
       const srNo = i + 1;
       const itm_Id = row.Itm_Id || 0;
       const inward = row.Inward || 0;
-      const qty = inward;
       const uni_Id = row.Uni_ID || 0;
 
-      const itmName = row.Itm_Name?.trim() || '';
+      const itmName = row.Itm_Name?.trim() || "";
       // Find additional fields
       const igpId = await findRecReturn(pool, "Itm_Mas", "IGP_Id", `Itm_Id = ${itm_Id}`);
-      let Product_Type = '';
+      let Product_Type = "";
 
       if (igpId) {
-        const igpNameResult = await pool.request()
-          .query(`SELECT IGP_Name FROM Itm_Grp WHERE IGP_Id = ${igpId}`);
+        const igpNameResult = await pool.request().query(`SELECT IGP_Name FROM Itm_Grp WHERE IGP_Id = ${igpId}`);
         if (igpNameResult.recordset.length > 0) {
           Product_Type = igpNameResult.recordset[0].IGP_Name;
         }
       }
 
-      const sortIndexResult = await findRecReturn(pool, "Itm_Mas", "Sort_Index", `Itm_Id = ${itm_Id}`);
-      const form_Id = sortIndexResult ? sortIndexResult : null;
+      const form_Id = await findRecReturn(pool, "Itm_Mas", "Sort_Index", `Itm_Id = ${itm_Id}`);
 
       const mUniName = await findRecReturn(pool, "Uni_Mas", "Uni_Name", `Uni_ID = ${uni_Id}`);
       if (!mUniName) {
         throw new Error("Unit Not Found In Master...");
       }
 
-      let dNo = '';
+      let dNo = "";
       if (inward !== 0) {
         const qtyFormatted = inward.toFixed(3);
-        if (mUniName && typeof mUniName === 'string' && mUniName.toUpperCase() === 'PCS') {
+        if (mUniName && typeof mUniName === "string" && mUniName.toUpperCase() === "PCS") {
           dNo = `${parseFloat(qtyFormatted)} Pcs`;
         } else {
           dNo = `${parseFloat(qtyFormatted)} ${inward <= 0.999 ? "Gm" : "Kg"}`;
@@ -203,45 +189,45 @@ export const insertSalePurDetail = async (
           @Bill_No, @Bill_Date, @Net_Amt, @mem_no, @Branch_ID, @Order_Close, @Area_Id, @Manu_Order_Close
         )
       `;
-      const request = pool.request()
-        .input('SrNo', sql.Int, srNo)
-        .input('Itm_Id', sql.Int, itm_Id)
-        .input('Inward', sql.Decimal(18, 3), inward)
-        .input('Qty', sql.Decimal(18, 3), qty)
-        .input('Rate', sql.Decimal(18, 2), 0)
-        .input('Uni_ID', sql.Int, uni_Id)
-        .input('Amt', sql.Decimal(18, 2), 0)
-        .input('Gross_Amt', sql.Decimal(18, 2), 0)
-        .input('Gross_Rate', sql.Decimal(18, 2), 0)
-        .input('Disc_Per', sql.Decimal(18, 2), 0)
-        .input('Disc_Amt', sql.Decimal(18, 2), 0)
-        .input('Asses_Val', sql.Decimal(18, 2), 0)
-        .input('Description', sql.NVarChar, '')
-        .input('Itm_Desc1', sql.NVarChar, '')
-        .input('Delivered', sql.Bit, false)
-        .input('Pay_Mode', sql.NVarChar, '')
-        .input('Ac_Id', sql.Int, Ac_Id)
-        .input('Style', sql.NVarChar, `${Ac_Code}-${Order_SrNo}`)
-        .input('Itm_Cat', sql.NVarChar, itmName)
-        .input('IGP_ID', sql.Int, igpId || null)
-        .input('Location', sql.NVarChar, Product_Type)
-        .input('Form_Id', sql.Int, form_Id)
-        .input('D_No', sql.NVarChar, dNo)
-        .input('Book_Ac_Id', sql.Int, bookAcId)
-        .input('Book_Id', sql.Int, bookId)
-        .input('Type_Id', sql.Int, typeId)
-        .input('Type', sql.NVarChar, 'Purchase Order')
-        .input('ID', sql.Int, id)
-        .input('Full_Bill_No', sql.NVarChar, `${Bill_No}`)
-        .input('Bill_No', sql.Int, Bill_No)
-        .input('Bill_Date', sql.DateTime, new Date(Bill_Date))
-        .input('Net_Amt', sql.Decimal(18, 2), 0)
-        .input('mem_no', sql.NVarChar, '')
-        .input('Branch_ID', sql.Int, branchId)
-        .input('Order_Close', sql.Bit, false)
-        .input('Area_Id', sql.Int, areaId)
-        .input('Manu_Order_Close', sql.Bit, Our_Shop_Ac);
-
+      const request = pool
+        .request()
+        .input("SrNo", sql.Int, srNo)
+        .input("Itm_Id", sql.Int, itm_Id)
+        .input("Inward", sql.Decimal(18, 3), inward)
+        .input("Qty", sql.Decimal(18, 3), inward)
+        .input("Rate", sql.Decimal(18, 2), 0)
+        .input("Uni_ID", sql.Int, uni_Id)
+        .input("Amt", sql.Decimal(18, 2), 0)
+        .input("Gross_Amt", sql.Decimal(18, 2), 0)
+        .input("Gross_Rate", sql.Decimal(18, 2), 0)
+        .input("Disc_Per", sql.Decimal(18, 2), 0)
+        .input("Disc_Amt", sql.Decimal(18, 2), 0)
+        .input("Asses_Val", sql.Decimal(18, 2), 0)
+        .input("Description", sql.NVarChar, "")
+        .input("Itm_Desc1", sql.NVarChar, "")
+        .input("Delivered", sql.Bit, false)
+        .input("Pay_Mode", sql.NVarChar, "Party")
+        .input("Ac_Id", sql.Int, Ac_Id)
+        .input("Style", sql.NVarChar, `${Ac_Code}-${Order_Count}`)
+        .input("Itm_Cat", sql.NVarChar, itmName)
+        .input("IGP_ID", sql.Int, igpId || null)
+        .input("Location", sql.NVarChar, Product_Type)
+        .input("Form_Id", sql.Int, form_Id)
+        .input("D_No", sql.NVarChar, dNo)
+        .input("Book_Ac_Id", sql.Int, bookAcId)
+        .input("Book_Id", sql.Int, bookId)
+        .input("Type_Id", sql.Int, typeId)
+        .input("Type", sql.NVarChar, "Purchase Order")
+        .input("ID", sql.Int, id)
+        .input("Full_Bill_No", sql.NVarChar, `${Bill_No}`)
+        .input("Bill_No", sql.Int, Bill_No)
+        .input("Bill_Date", sql.DateTime, new Date(Bill_Date))
+        .input("Net_Amt", sql.Decimal(18, 2), 0)
+        .input("mem_no", sql.NVarChar, "")
+        .input("Branch_ID", sql.Int, branchId)
+        .input("Order_Close", sql.Bit, false)
+        .input("Area_Id", sql.Int, areaId)
+        .input("Manu_Order_Close", sql.Bit, Our_Shop_Ac);
 
       console.log(`
           Inserting into Sale_Pur_Detail:
@@ -251,7 +237,7 @@ export const insertSalePurDetail = async (
           Ac_Code: ${Ac_Code}
           Id: ${id}
           Type_Id: ${typeId}
-          Order_SrNo: ${Order_SrNo}
+          Order_Count: ${Order_Count}
           Bill_No: ${Bill_No}
           Bill_Date: ${Bill_Date}
           Our_Shop_Ac: ${Our_Shop_Ac}
@@ -268,15 +254,10 @@ export const insertSalePurDetail = async (
   }
 };
 
-
-
 // Fetch Sale_Pur_Main by ID
 export const getSalePurMain = async (id: number) => {
   try {
-    const result = await pool
-      .request()
-      .input("Id", id)
-      .query(`
+    const result = await pool.request().input("Id", id).query(`
         SELECT 
           Id,
           Type_Id,
@@ -345,43 +326,41 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
       mainQuery += ` AND Ac_Id = @Ac_Id`;
     }
 
-    const mainRequest = pool.request()
-      .input('FromDate', sql.Date, fromDate)
-      .input('ToDate', sql.Date, toDate);
+    const mainRequest = pool.request().input("FromDate", sql.Date, fromDate).input("ToDate", sql.Date, toDate);
 
     if (!isAdmin) {
-      mainRequest.input('Ac_Id', sql.Int, Ac_Id);
+      mainRequest.input("Ac_Id", sql.Int, Ac_Id);
     }
 
     const mainResult = (await mainRequest.query(mainQuery)).recordset;
-    console.log("mainRecord", mainResult)
+    console.log("mainRecord", mainResult);
 
     if (mainResult.length === 0) {
       return [];
     }
 
-    const mainIds = mainResult.map(record => record.Bill_No);
-    console.log("mainIds", mainIds)
+    const mainIds = mainResult.map((record) => record.Bill_No);
+    console.log("mainIds", mainIds);
 
-    const detailResult = (await pool.request()
-      .query(`
+    const detailResult = (
+      await pool.request().query(`
       SELECT 
         Bill_No, Itm_Id, Qty, Uni_Id
       FROM Sale_Pur_Detail
-      WHERE Bill_No IN (${mainIds.join(',')})
-    `)).recordset;
+      WHERE Bill_No IN (${mainIds.join(",")})
+    `)
+    ).recordset;
 
-    const combinedData = mainResult.map(main => ({
+    const combinedData = mainResult.map((main) => ({
       Ac_Id: main.Ac_Id,
       Bill_No: main.Bill_No,
       Bill_Date: main.Bill_Date,
-      Details: detailResult.filter(detail => detail.Bill_No === main.Bill_No)
+      Details: detailResult.filter((detail) => detail.Bill_No === main.Bill_No),
     }));
     console.log("combine data", combinedData);
     return combinedData;
-
   } catch (error) {
-    console.error('Error in getOrderData:', error);
+    console.error("Error in getOrderData:", error);
     throw error;
   }
 };
