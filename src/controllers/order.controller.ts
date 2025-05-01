@@ -335,11 +335,17 @@ export const getSalePurMain = async (id: number) => {
 };
 
 export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) => {
+  console.log("🚀 ~ getOrderData ~ fromDate:", fromDate);
+  console.log("🚀 ~ getOrderData ~ toDate:", toDate);
+  console.log("🚀 ~ getOrderData ~ Ac_Id:", Ac_Id);
+  console.log("🚀 ~ getOrderData ~ isAdmin:", isAdmin);
+ 
   try {
     let mainQuery = `
-      SELECT Id, Ac_Id, Bill_No, Bill_Date
-      FROM Sale_Pur_Main
-      WHERE Bill_Date BETWEEN @FromDate AND @ToDate
+      SELECT M.Id, M.Bill_No, M.Bill_Date, A.Ac_Name
+      FROM Sale_Pur_Main M
+      JOIN Ac_Mas A ON M.Ac_Id = A.Id
+      WHERE M.Bill_Date BETWEEN @FromDate AND @ToDate
     `;
 
     if (!isAdmin) {
@@ -359,20 +365,25 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
       return [];
     }
 
-    const mainIds = mainResult.map((record) => record.Bill_No);
-    console.log("mainIds", mainIds);
+    const mainBillNos = mainResult.map((record) => `'${record.Bill_No}'`).join(",");
+
+    console.log("mainBillNos", mainBillNos);
 
     const detailResult = (
       await pool.request().query(`
       SELECT 
-        Bill_No, Itm_Id, Qty, Uni_ID
-      FROM Sale_Pur_Detail
-      WHERE Bill_No IN (${mainIds.join(",")})
+        D.Bill_No,D.SrNo, D.Itm_Id, I.Itm_Name, D.Qty, D.Uni_ID, U.Uni_Name
+      FROM Sale_Pur_Detail D
+      LEFT JOIN Uni_Mas U ON D.Uni_ID = U.Uni_ID
+      LEFT JOIN Itm_Mas I ON D.Itm_Id = I.Itm_ID
+      WHERE D.Bill_No IN (${mainBillNos})
     `)
     ).recordset;
 
+
+
     const combinedData = mainResult.map((main) => ({
-      Ac_Id: main.Ac_Id,
+      Ac_Name: main.Ac_Name,
       Bill_No: main.Bill_No,
       Bill_Date: main.Bill_Date,
       Details: detailResult.filter((detail) => detail.Bill_No === main.Bill_No),
