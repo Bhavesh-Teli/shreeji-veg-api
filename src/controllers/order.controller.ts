@@ -1,5 +1,5 @@
 import { pool, sql } from "../config/dbConfig";
-import { autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
+import {  autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
 
 // Static values
 const bookId = 25;
@@ -33,10 +33,10 @@ export const insertSalePurMain = async (
 
     // Generate auto numbers
     const [id, typeId, bookVNo, vNo] = await Promise.all([
-      autoNumber(transaction, "Sale_Pur_Main", "Id", "Type <> 'Purchase Old' AND Type <> 'Sale Old'"),
-      autoNumber(transaction, "Sale_Pur_Main", "Type_Id", `Type = '${Type}'`),
-      autoNumber(transaction, "Sale_Pur_Main", "Book_V_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId}`),
-      autoNumber(transaction, "Sale_Pur_Main", "V_No", `Type = '${Type}'`)
+      autoNumber(pool, "Sale_Pur_Main", "Id", "Type <> 'Purchase Old' AND Type <> 'Sale Old'"),
+      autoNumber(pool, "Sale_Pur_Main", "Type_Id", `Type = '${Type}'`),
+      autoNumber(pool, "Sale_Pur_Main", "Book_V_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId}`),
+      autoNumber(pool, "Sale_Pur_Main", "V_No", `Type = '${Type}'`)
     ]);
 
     // Insert Query
@@ -168,12 +168,10 @@ export const insertSalePurDetail = async (
 
 
       const [igpId,form_Id,Uni_Name]=await Promise.all([
-        findRecReturn(transaction, "Itm_Mas", "IGP_Id", `Itm_Id = ${itm_Id}`),
-        findRecReturn(transaction, "Itm_Mas", "Sort_Index", `Itm_Id = ${itm_Id}`),
-        findRecReturn(transaction, "Uni_Mas", "Uni_Name", `Uni_ID = ${Uni_ID}`)
+        findRecReturn(pool, "Itm_Mas", "IGP_Id", `Itm_Id = ${itm_Id}`),
+        findRecReturn(pool, "Itm_Mas", "Sort_Index", `Itm_Id = ${itm_Id}`),
+        findRecReturn(pool, "Uni_Mas", "Uni_Name", `Uni_ID = ${Uni_ID}`)
       ]);
-        
-      
 
       let Product_Type = "";
       if (igpId) {

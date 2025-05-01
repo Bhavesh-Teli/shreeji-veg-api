@@ -1,11 +1,11 @@
-import { pool, sql } from "../config/dbConfig";
-import { ConnectionPool,Transaction } from "mssql";
+import { sql } from "../config/dbConfig";
+import { ConnectionPool } from "mssql";
 
 
 // Function to get the next auto-number
-type SqlExecutor = ConnectionPool | Transaction;
+
 export const autoNumber = async (
-  executor: SqlExecutor,
+  pool: ConnectionPool,
   tableName: string,
   fieldName: string,
   mSQL: string = ''
@@ -14,7 +14,7 @@ export const autoNumber = async (
   const query = `SELECT MAX(ISNULL(${fieldName}, 0)) AS LastNo FROM ${tableName} ${condition}`;
 
   try {
-    const result = await executor.request().query(query);
+    const result = await pool.request().query(query);
     return (result.recordset[0]?.LastNo ?? 0) + 1;
   } catch (error) {
     console.error("Error in autoNumber:", error);
@@ -42,7 +42,7 @@ export const getCount = async (
 
 
 export const findRecReturn = async (
-  transaction: sql.Transaction,
+  pool: ConnectionPool,
   tableName: string,
   selectField: string,
   whereCondition?: string
@@ -51,10 +51,14 @@ export const findRecReturn = async (
   if (whereCondition && whereCondition.trim() !== '') {
     query += ` WHERE ${whereCondition}`;
   }
+  console.log("query",query)
 
   try {
-    const result = await transaction.request().query(query);
+    const result = await pool.request().query(query);
+    console.log("result",result)
     const rows = result.recordset;
+   
+    console.log("rows",rows)
 
     if (rows && rows.length > 0) {
       const value = rows[0][selectField]; // Access the first row and field
