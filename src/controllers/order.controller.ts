@@ -275,70 +275,7 @@ export const insertSalePurDetail = async (
   }
 };
 
-export const getSalePurMain = async (id: number) => {
-  try {
-    const result = await pool.request().input("Id", id).query(`
-        SELECT 
-          Id,
-          Type_Id,
-          Book_V_No,
-          V_No,
-          Book_Id,
-          Book_Ac_Id,
-          Bill_No,
-          Bill_NoP,
-          Bill_NoS,
-          Full_Bill_No,
-          Bill_Type,
-          Bill_Date,
-          Gross_Amt,
-          Total_Amount,
-          Total_Qty,
-          Total_Sundry_Disc_Amt,
-          Round_Off,
-          Net_Amt,
-          Net_Amt1,
-          Total_Disc_Amt,
-          Asses_Val,
-          AmtInWord,
-          Ac_Id,
-          Remark,
-          Type,
-          mem_no,
-          Pay_Mode,
-          Cash_Bill,
-          Cancel_Bill,
-          Order_Close,
-          USER_ID,
-          Sys_Date_Add,
-          Sys_Time_Add,
-          Sys_Date_Edit,
-          Sys_Time_Edit,
-          Area_Id,
-          Branch_ID,
-          Bala_Amt,
-          LR_No,
-          Manu_Order_Close
-        FROM Sale_Pur_Main
-        WHERE Id = @Id
-      `);
-
-    if (result.recordset.length === 0) {
-      throw new Error("No record found with the provided Id");
-    }
-
-    return result.recordset[0];
-  } catch (error) {
-    console.error("Error in getSalePurMain:", error);
-    throw error;
-  }
-};
-
 export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) => {
-  console.log("🚀 ~ getOrderData ~ fromDate:", fromDate);
-  console.log("🚀 ~ getOrderData ~ toDate:", toDate);
-  console.log("🚀 ~ getOrderData ~ Ac_Id:", Ac_Id);
-  console.log("🚀 ~ getOrderData ~ isAdmin:", isAdmin);
  
   try {
     let mainQuery = `
@@ -386,12 +323,57 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
       Ac_Name: main.Ac_Name,
       Bill_No: main.Bill_No,
       Bill_Date: main.Bill_Date,
-      Details: detailResult.filter((detail) => detail.Bill_No === main.Bill_No),
-    }));
+      Details: detailResult
+      .filter((detail) => detail.Bill_No === main.Bill_No)
+      .map((detail) => ({
+        ...detail,
+        Qty:
+          Number(detail.Qty) % 1 === 0
+            ? Number(detail.Qty)
+            : Number(detail.Qty).toFixed(3),
+      })),
+  }));
     console.log("combine data", combinedData);
     return combinedData;
   } catch (error) {
     console.error("Error in getOrderData:", error);
     throw error;
+  }
+};
+
+export const deleteOrder = async (Bill_No: number) => {
+  const transaction = pool.transaction();
+
+  try {
+    await transaction.begin();
+
+    // Delete from Sale_Pur_Detail first (child table)
+    const detailResult = await transaction
+      .request()
+      .input("Bill_No", sql.Int, Bill_No)
+      .query("DELETE FROM [Sale_Pur_Detail] WHERE Bill_No = @Bill_No");
+
+    // Then delete from Sale_Pur_Main (parent table)
+    const mainResult = await transaction
+      .request()
+      .input("Bill_No", sql.Int, Bill_No)
+      .query("DELETE FROM [Sale_Pur_Main] WHERE Bill_No = @Bill_No");
+
+    // If no rows were deleted in main, throw an error
+    if (mainResult.rowsAffected[0] === 0) {
+      throw new Error("Order not found");
+    }
+
+    await transaction.commit();
+
+    return {
+      message: "Order deleted successfully",
+      Bill_No,
+      detailRowsDeleted: detailResult.rowsAffected[0],
+      mainRowsDeleted: mainResult.rowsAffected[0],
+    };
+  } catch (error: any) {
+    await transaction.rollback();
+    throw new Error(error.message || "Something went wrong while deleting the order.");
   }
 };
