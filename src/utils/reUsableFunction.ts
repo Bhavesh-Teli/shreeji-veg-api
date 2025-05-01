@@ -1,10 +1,11 @@
 import { pool, sql } from "../config/dbConfig";
-import { ConnectionPool } from "mssql";
+import { ConnectionPool,Transaction } from "mssql";
 
 
 // Function to get the next auto-number
+type SqlExecutor = ConnectionPool | Transaction;
 export const autoNumber = async (
-  transaction: sql.Transaction,
+  executor: SqlExecutor,
   tableName: string,
   fieldName: string,
   mSQL: string = ''
@@ -13,7 +14,7 @@ export const autoNumber = async (
   const query = `SELECT MAX(ISNULL(${fieldName}, 0)) AS LastNo FROM ${tableName} ${condition}`;
 
   try {
-    const result = await transaction.request().query(query);
+    const result = await executor.request().query(query);
     return (result.recordset[0]?.LastNo ?? 0) + 1;
   } catch (error) {
     console.error("Error in autoNumber:", error);
