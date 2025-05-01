@@ -4,7 +4,7 @@ import { ConnectionPool } from "mssql";
 
 // Function to get the next auto-number
 export const autoNumber = async (
-  pool: ConnectionPool,
+  transaction: sql.Transaction,
   tableName: string,
   fieldName: string,
   mSQL: string = ''
@@ -13,7 +13,7 @@ export const autoNumber = async (
   const query = `SELECT MAX(ISNULL(${fieldName}, 0)) AS LastNo FROM ${tableName} ${condition}`;
 
   try {
-    const result = await pool.request().query(query);
+    const result = await transaction.request().query(query);
     return (result.recordset[0]?.LastNo ?? 0) + 1;
   } catch (error) {
     console.error("Error in autoNumber:", error);
@@ -41,7 +41,7 @@ export const getCount = async (
 
 
 export const findRecReturn = async (
-  pool: ConnectionPool,
+  transaction: sql.Transaction,
   tableName: string,
   selectField: string,
   whereCondition?: string
@@ -52,7 +52,7 @@ export const findRecReturn = async (
   }
 
   try {
-    const result = await pool.request().query(query);
+    const result = await transaction.request().query(query);
     const rows = result.recordset;
 
     if (rows && rows.length > 0) {

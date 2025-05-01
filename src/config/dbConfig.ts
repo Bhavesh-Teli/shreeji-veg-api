@@ -14,8 +14,6 @@ export const shreejiDbConfig = {
     encrypt: false, // Set true if using Azure
     trustServerCertificate: true,
   },
-  requestTimeout: 60000, // 60 seconds
-  connectionTimeout: 30000
 };
 
 // Connection configurations for Common Database

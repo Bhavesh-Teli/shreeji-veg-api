@@ -56,37 +56,37 @@ router.get("/getSalePurMain/:id", async (req, res) => {
   }
 });
 
-router.post("/insertSalePurDetail", authVerify, async (req, res) => {
-  try {
-    const {
-      mode,
-      details,
-      id,
-      typeId,
-      Bill_No,
-      Order_SrNo,
-      Bill_Date,
-    } = req.body;
-    const { Id: Ac_Id, Ac_Code, Our_Shop_Ac } = req.user;
+// router.post("/insertSalePurDetail", authVerify, async (req, res) => {
+//   try {
+//     const {
+//       mode,
+//       details,
+//       id,
+//       typeId,
+//       Bill_No,
+//       Order_SrNo,
+//       Bill_Date,
+//     } = req.body;
+//     const { Id: Ac_Id, Ac_Code, Our_Shop_Ac } = req.user;
 
-    await insertSalePurDetail(
-      mode,
-      details,
-      Ac_Id,
-      Ac_Code,
-      id,
-      typeId,
-      Order_SrNo,
-      Bill_No,
-      Bill_Date,
-      Our_Shop_Ac
-    );
+//     await insertSalePurDetail(
+//       mode,
+//       details,
+//       Ac_Id,
+//       Ac_Code,
+//       id,
+//       typeId,
+//       Order_SrNo,
+//       Bill_No,
+//       Bill_Date,
+//       Our_Shop_Ac
+//     );
 
-    return successResponse(res, null, "Data inserted successfully into Sale_Pur_Detail!");
-  } catch (error) {
-    return errorResponse(res, (error as Error).message);
-  }
-});
+//     return successResponse(res, null, "Data inserted successfully into Sale_Pur_Detail!");
+//   } catch (error) {
+//     return errorResponse(res, (error as Error).message);
+//   }
+// });
 
 
 router.get("/OrderData", authVerify, async (req, res) => {
