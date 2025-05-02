@@ -1,5 +1,5 @@
 import { pool, sql } from "../config/dbConfig";
-import {  autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
+import { autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
 
 // Static values
 const bookId = 25;
@@ -127,8 +127,8 @@ export const insertSalePurMain = async (
       FROM Sale_Pur_Main
       WHERE Bill_No = @Bill_No
     `;
-    const fetchResult = await transaction.request().input("Bill_No", sql.Int, Bill_No).query(fetchQuery);
-    const { id, typeId } = fetchResult.recordset[0];
+      const fetchResult = await transaction.request().input("Bill_No", sql.Int, Bill_No).query(fetchQuery);
+      const { Id: id, Type_Id: typeId } = fetchResult.recordset[0];
       const updateQuery = `
         UPDATE Sale_Pur_Main
         SET Sys_Date_Edit = @Sys_Date, Sys_Time_Edit = @Sys_Time
@@ -165,7 +165,6 @@ export const insertSalePurMain = async (
     throw error;
   }
 };
-
 
 interface SalePurDetailRow {
   Itm_Id: number;
@@ -207,7 +206,7 @@ export const insertSalePurDetail = async (
       const itmName = row.Itm_Name?.trim() || '';
 
 
-      const [igpId,form_Id,Uni_Name]=await Promise.all([
+      const [igpId, form_Id, Uni_Name] = await Promise.all([
         findRecReturn(pool, "Itm_Mas", "IGP_Id", `Itm_Id = ${itm_Id}`),
         findRecReturn(pool, "Itm_Mas", "Sort_Index", `Itm_Id = ${itm_Id}`),
         findRecReturn(pool, "Uni_Mas", "Uni_Name", `Uni_ID = ${Uni_ID}`)
@@ -316,7 +315,7 @@ export const insertSalePurDetail = async (
 };
 
 export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) => {
- 
+
   try {
     let mainQuery = `
       SELECT M.Id, M.Bill_No, M.Bill_Date,M.LR_No, A.Ac_Name
@@ -365,15 +364,15 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
       Bill_Date: main.Bill_Date,
       Order_Count: main.LR_No,
       Details: detailResult
-      .filter((detail) => detail.Bill_No === main.Bill_No)
-      .map((detail) => ({
-        ...detail,
-        Qty:
-          Number(detail.Qty) % 1 === 0
-            ? Number(detail.Qty)
-            : Number(detail.Qty).toFixed(3),
-      })),
-  }));
+        .filter((detail) => detail.Bill_No === main.Bill_No)
+        .map((detail) => ({
+          ...detail,
+          Qty:
+            Number(detail.Qty) % 1 === 0
+              ? Number(detail.Qty)
+              : Number(detail.Qty).toFixed(3),
+        })),
+    }));
     console.log("combine data", combinedData);
     return combinedData;
   } catch (error) {
