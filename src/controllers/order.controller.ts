@@ -31,94 +31,133 @@ export const insertSalePurMain = async (
     await transaction.begin();
     const sysTimeFormatted = new Date().toTimeString().slice(0, 8);
 
-    // Generate auto numbers
-    const [id, typeId, bookVNo, vNo] = await Promise.all([
-      autoNumber(pool, "Sale_Pur_Main", "Id", "Type <> 'Purchase Old' AND Type <> 'Sale Old'"),
-      autoNumber(pool, "Sale_Pur_Main", "Type_Id", `Type = '${Type}'`),
-      autoNumber(pool, "Sale_Pur_Main", "Book_V_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId}`),
-      autoNumber(pool, "Sale_Pur_Main", "V_No", `Type = '${Type}'`)
-    ]);
+    if (mode === "add") {
+      const fullBillNo = `${Bill_No}`;
+      const billType = `${Ac_Code}-${Order_Count}`;
 
-    // Insert Query
-    const insertQuery = `
-      INSERT INTO Sale_Pur_Main (
-        Id, Type_Id, Book_V_No, V_No, Book_Id, Book_Ac_Id,
-        Bill_No, Bill_NoP, Bill_NoS, Full_Bill_No, Bill_Type, Bill_Date,
-        Gross_Amt, Total_Amount, Total_Qty, Total_Sundry_Disc_Amt,
-        Round_Off, Net_Amt, Net_Amt1, Total_Disc_Amt, Asses_Val,
-        AmtInWord, Ac_Id, Remark, Type, mem_no, Pay_Mode,
-        Cash_Bill, Cancel_Bill, Order_Close, USER_ID,
-        ${mode === "add" ? "Sys_Date_Add, Sys_Time_Add" : "Sys_Date_Edit, Sys_Time_Edit"},
-        Area_Id, Branch_ID, Bala_Amt, LR_No,Manu_Order_Close
-      ) VALUES (
-        @Id, @Type_Id, @Book_V_No, @V_No, @Book_Id, @Book_Ac_Id,
-        @Bill_No, @Bill_NoP, @Bill_NoS, @Full_Bill_No, @Bill_Type, @Bill_Date,
-        @Gross_Amt, @Total_Amount, @Total_Qty, @Total_Sundry_Disc_Amt,
-        @Round_Off, @Net_Amt, @Net_Amt1, @Total_Disc_Amt, @Asses_Val,
-        @AmtInWord, @Ac_Id, @Remark, @Type, @mem_no, @Pay_Mode,
-        @Cash_Bill, @Cancel_Bill, @Order_Close, @USER_ID,
-        @Sys_Date, @Sys_Time,
-        @Area_Id, @Branch_ID, @Bala_Amt, @LR_No, @Manu_Order_Close
-      )
+      const [id, typeId, bookVNo, vNo] = await Promise.all([
+        autoNumber(pool, "Sale_Pur_Main", "Id", "Type <> 'Purchase Old' AND Type <> 'Sale Old'"),
+        autoNumber(pool, "Sale_Pur_Main", "Type_Id", `Type = '${Type}'`),
+        autoNumber(pool, "Sale_Pur_Main", "Book_V_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId}`),
+        autoNumber(pool, "Sale_Pur_Main", "V_No", `Type = '${Type}'`)
+      ]);
+
+      const insertQuery = `
+        INSERT INTO Sale_Pur_Main (
+          Id, Type_Id, Book_V_No, V_No, Book_Id, Book_Ac_Id,
+          Bill_No, Bill_NoP, Bill_NoS, Full_Bill_No, Bill_Type, Bill_Date,
+          Gross_Amt, Total_Amount, Total_Qty, Total_Sundry_Disc_Amt,
+          Round_Off, Net_Amt, Net_Amt1, Total_Disc_Amt, Asses_Val,
+          AmtInWord, Ac_Id, Remark, Type, mem_no, Pay_Mode,
+          Cash_Bill, Cancel_Bill, Order_Close, USER_ID,
+          Sys_Date_Add, Sys_Time_Add,
+          Area_Id, Branch_ID, Bala_Amt, LR_No, Manu_Order_Close
+        ) VALUES (
+          @Id, @Type_Id, @Book_V_No, @V_No, @Book_Id, @Book_Ac_Id,
+          @Bill_No, @Bill_NoP, @Bill_NoS, @Full_Bill_No, @Bill_Type, @Bill_Date,
+          @Gross_Amt, @Total_Amount, @Total_Qty, @Total_Sundry_Disc_Amt,
+          @Round_Off, @Net_Amt, @Net_Amt1, @Total_Disc_Amt, @Asses_Val,
+          @AmtInWord, @Ac_Id, @Remark, @Type, @mem_no, @Pay_Mode,
+          @Cash_Bill, @Cancel_Bill, @Order_Close, @USER_ID,
+          @Sys_Date, @Sys_Time,
+          @Area_Id, @Branch_ID, @Bala_Amt, @LR_No, @Manu_Order_Close
+        )
+      `;
+
+      await transaction
+        .request()
+        .input("Id", sql.Int, id)
+        .input("Type_Id", sql.Int, typeId)
+        .input("Book_V_No", sql.Int, bookVNo)
+        .input("V_No", sql.Int, vNo)
+        .input("Book_Id", sql.Int, bookId)
+        .input("Book_Ac_Id", sql.Int, bookAcId)
+        .input("Bill_No", sql.Int, Bill_No)
+        .input("Bill_NoP", sql.NVarChar, "")
+        .input("Bill_NoS", sql.NVarChar, "")
+        .input("Full_Bill_No", sql.NVarChar, fullBillNo)
+        .input("Bill_Type", sql.NVarChar, billType)
+        .input("Bill_Date", sql.DateTime, Bill_Date)
+        .input("Gross_Amt", sql.Decimal(18, 2), 0)
+        .input("Total_Amount", sql.Decimal(18, 2), 0)
+        .input("Total_Qty", sql.Decimal(18, 2), 0)
+        .input("Total_Sundry_Disc_Amt", sql.Decimal(18, 2), 0)
+        .input("Round_Off", sql.Decimal(18, 2), 0)
+        .input("Net_Amt", sql.Decimal(18, 2), 0)
+        .input("Net_Amt1", sql.Decimal(18, 2), 0)
+        .input("Total_Disc_Amt", sql.Decimal(18, 2), 0)
+        .input("Asses_Val", sql.Decimal(18, 2), 0)
+        .input("AmtInWord", sql.NVarChar, "Rs. Zero Only.")
+        .input("Ac_Id", sql.Int, Ac_Id)
+        .input("Remark", sql.NVarChar, "")
+        .input("Type", sql.NVarChar, `${Type}`)
+        .input("mem_no", sql.NVarChar, "")
+        .input("Pay_Mode", sql.NVarChar, "Party")
+        .input("Cash_Bill", sql.Bit, false)
+        .input("Cancel_Bill", sql.Bit, false)
+        .input("Order_Close", sql.Bit, false)
+        .input("USER_ID", sql.Int, USER_ID)
+        .input("Sys_Date", sql.DateTime, Bill_Date)
+        .input("Sys_Time", sql.VarChar(8), sysTimeFormatted)
+        .input("Area_Id", sql.Int, areaId)
+        .input("Branch_ID", sql.Int, branchId)
+        .input("Bala_Amt", sql.Decimal(18, 2), 0)
+        .input("LR_No", sql.Int, Order_Count)
+        .input("Manu_Order_Close", sql.Bit, Our_Shop_Ac)
+        .query(insertQuery);
+
+      // Also insert details
+      await insertSalePurDetail(
+        transaction,
+        mode,
+        details,
+        Ac_Id,
+        Ac_Code,
+        id,
+        typeId,
+        Order_Count,
+        Bill_No,
+        Bill_Date,
+        Our_Shop_Ac
+      );
+    } else {
+      // In update mode, just update the edit timestamp
+      const fetchQuery = `
+      SELECT Id, Type_Id
+      FROM Sale_Pur_Main
+      WHERE Bill_No = @Bill_No
     `;
+    const fetchResult = await transaction.request().input("Bill_No", sql.Int, Bill_No).query(fetchQuery);
+    const { id, typeId } = fetchResult.recordset[0];
+      const updateQuery = `
+        UPDATE Sale_Pur_Main
+        SET Sys_Date_Edit = @Sys_Date, Sys_Time_Edit = @Sys_Time
+        WHERE Bill_No = @Bill_No AND Ac_Id = @Ac_Id
+      `;
 
-    // Request object directly from the pool
-    const request = transaction
-      .request()
-      .input("Id", sql.Int, id)
-      .input("Type_Id", sql.Int, typeId)
-      .input("Book_V_No", sql.Int, bookVNo)
-      .input("V_No", sql.Int, vNo)
-      .input("Book_Id", sql.Int, bookId)
-      .input("Book_Ac_Id", sql.Int, bookAcId)
-      .input("Bill_No", sql.Int, Bill_No)
-      .input("Bill_NoP", sql.NVarChar, "")
-      .input("Bill_NoS", sql.NVarChar, "")
-      .input("Full_Bill_No", sql.NVarChar, `${Bill_No}`)
-      .input("Bill_Type", sql.NVarChar, `${Ac_Code}-${Order_Count}`)
-      .input("Bill_Date", sql.DateTime, Bill_Date)
-      .input("Gross_Amt", sql.Decimal(18, 2), 0)
-      .input("Total_Amount", sql.Decimal(18, 2), 0)
-      .input("Total_Qty", sql.Decimal(18, 2), 0)
-      .input("Total_Sundry_Disc_Amt", sql.Decimal(18, 2), 0)
-      .input("Round_Off", sql.Decimal(18, 2), 0)
-      .input("Net_Amt", sql.Decimal(18, 2), 0)
-      .input("Net_Amt1", sql.Decimal(18, 2), 0)
-      .input("Total_Disc_Amt", sql.Decimal(18, 2), 0)
-      .input("Asses_Val", sql.Decimal(18, 2), 0)
-      .input("AmtInWord", sql.NVarChar, "Rs. Zero Only.")
-      .input("Ac_Id", sql.Int, Ac_Id)
-      .input("Remark", sql.NVarChar, "")
-      .input("Type", sql.NVarChar, `${Type}`)
-      .input("mem_no", sql.NVarChar, "")
-      .input("Pay_Mode", sql.NVarChar, "Party")
-      .input("Cash_Bill", sql.Bit, false)
-      .input("Cancel_Bill", sql.Bit, false)
-      .input("Order_Close", sql.Bit, false)
-      .input("USER_ID", sql.Int, USER_ID)
-      .input("Sys_Date", sql.DateTime, Bill_Date) //dATE NOW
-      .input("Sys_Time", sql.VarChar(8), sysTimeFormatted)
-      .input("Area_Id", sql.Int, areaId)
-      .input("Branch_ID", sql.Int, branchId)
-      .input("Bala_Amt", sql.Decimal(18, 2), 0)
-      .input("LR_No", sql.Int, Order_Count)
-      .input("Manu_Order_Close", sql.Bit, Our_Shop_Ac);
+      await transaction
+        .request()
+        .input("Sys_Date", sql.DateTime, Bill_Date)
+        .input("Sys_Time", sql.VarChar(8), sysTimeFormatted)
+        .input("Bill_No", sql.Int, Bill_No)
+        .input("Ac_Id", sql.Int, Ac_Id)
+        .query(updateQuery);
 
-    await request.query(insertQuery);
-
-    await insertSalePurDetail(
-      transaction,
-      mode,
-      details,
-      Ac_Id,
-      Ac_Code,
-      id,
-      typeId,
-      Order_Count,
-      Bill_No,
-      Bill_Date,
-      Our_Shop_Ac
-    );
+      // You may still want to update details
+      await insertSalePurDetail(
+        transaction,
+        mode,
+        details,
+        Ac_Id,
+        Ac_Code,
+        id, // existing Id
+        typeId, // existing Type_Id
+        Order_Count,
+        Bill_No,
+        Bill_Date,
+        Our_Shop_Ac
+      );
+    }
 
     await transaction.commit();
   } catch (error: any) {
@@ -126,6 +165,7 @@ export const insertSalePurMain = async (
     throw error;
   }
 };
+
 
 interface SalePurDetailRow {
   Itm_Id: number;
@@ -279,7 +319,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
  
   try {
     let mainQuery = `
-      SELECT M.Id, M.Bill_No, M.Bill_Date, A.Ac_Name
+      SELECT M.Id, M.Bill_No, M.Bill_Date,M.LR_No, A.Ac_Name
       FROM Sale_Pur_Main M
       JOIN Ac_Mas A ON M.Ac_Id = A.Id
       WHERE M.Bill_Date BETWEEN @FromDate AND @ToDate
@@ -323,6 +363,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
       Ac_Name: main.Ac_Name,
       Bill_No: main.Bill_No,
       Bill_Date: main.Bill_Date,
+      Order_Count: main.LR_No,
       Details: detailResult
       .filter((detail) => detail.Bill_No === main.Bill_No)
       .map((detail) => ({

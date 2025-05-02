@@ -1,5 +1,6 @@
 import sql from "mssql";
 import dotenv from "dotenv";
+import { getCurrentYearDbNameFromComMass } from "../utils/dbFunctions";
 
 dotenv.config();
 
@@ -29,12 +30,30 @@ export const commonDbConfig = {
   },
 };
 
+export const baseDbConfig = {
+  user: process.env.COMMON_DB_USER || "",
+  password: process.env.COMMON_DB_PASSWORD || "",
+  server: process.env.COMMON_DB_SERVER || "",
+  port: Number(process.env.COMMON_DB_PORT) || 1433,
+  options: {
+    encrypt: false, // Set true if using Azure
+    trustServerCertificate: true,
+  },
+};
+
 // Function to get a database connection
-export const pool = new sql.ConnectionPool(shreejiDbConfig);
+export let pool: sql.ConnectionPool;
 export const poolCommon = new sql.ConnectionPool(commonDbConfig);
 
 export const connectDB = async () => {
   try {
+    const result = await getCurrentYearDbNameFromComMass();
+    const fullDbName = `${process.env.DB_PREFIX}${result}`;
+    pool = new sql.ConnectionPool({
+      ...baseDbConfig,
+      database: fullDbName,
+    });
+    console.log("Database: ", fullDbName);
     await pool.connect();
     console.log("Connected to ShreejiVegDB ✅");
   } catch (err) {
