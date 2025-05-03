@@ -1,4 +1,5 @@
-import { pool, sql } from "../config/dbConfig";
+import { pool, sql, baseDbConfig } from "../config/dbConfig";
+import { getDbPool } from "../utils/dbPoolManager";
 import { autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
 
 // Static values
@@ -196,19 +197,19 @@ export const insertSalePurDetail = async (
 
     for (let i = 0; i < details.length; i++) {
       console.log(`\n🔁 Processing row ${i + 1}/${details.length}`);
-      const row = details[i];
-      console.log("📦 Row data:", row);
+      const { Itm_Id, Inward, Uni_ID, Itm_Name } = details[i];
+      // console.log("📦 Row data:", row);
 
       const srNo = i + 1;
-      const itm_Id = row.Itm_Id || 0;
-      const inward = row.Inward || 0;
-      const Uni_ID = row.Uni_ID || 0;
-      const itmName = row.Itm_Name?.trim() || '';
+      // const itm_Id = row.Itm_Id || 0;
+      // const inward = row.Inward || 0;
+      // const Uni_ID = row.Uni_ID || 0;
+      // const itmName = row.Itm_Name?.trim() || '';
 
 
       const [igpId, form_Id, Uni_Name] = await Promise.all([
-        findRecReturn(pool, "Itm_Mas", "IGP_Id", `Itm_Id = ${itm_Id}`),
-        findRecReturn(pool, "Itm_Mas", "Sort_Index", `Itm_Id = ${itm_Id}`),
+        findRecReturn(pool, "Itm_Mas", "IGP_Id", `Itm_Id = ${Itm_Id}`),
+        findRecReturn(pool, "Itm_Mas", "Sort_Index", `Itm_Id = ${Itm_Id}`),
         findRecReturn(pool, "Uni_Mas", "Uni_Name", `Uni_ID = ${Uni_ID}`)
       ]);
 
@@ -223,20 +224,20 @@ export const insertSalePurDetail = async (
       if (!Uni_Name) throw new Error("❌ Unit Not Found In Master...");
 
       let dNo = "";
-      if (inward !== 0) {
-        const qtyFormatted = inward.toFixed(3);
+      if (Inward !== 0) {
+        const qtyFormatted = Inward.toFixed(3);
         dNo =
           typeof Uni_Name === "string" && Uni_Name.toUpperCase() === "PCS"
             ? `${parseFloat(qtyFormatted)} Pcs`
-            : `${parseFloat(qtyFormatted)} ${inward <= 0.999 ? "Gm" : "Kg"}`;
+            : `${parseFloat(qtyFormatted)} ${Inward <= 0.999 ? "Gm" : "Kg"}`;
       }
 
       console.log("📤 Executing INSERT with values:", {
         srNo,
-        itm_Id,
-        inward,
+        Itm_Id,
+        Inward,
         Uni_ID,
-        itmName,
+        Itm_Name,
         Product_Type,
         form_Id,
         dNo,
@@ -266,9 +267,9 @@ export const insertSalePurDetail = async (
       const request = transaction
         .request()
         .input("SrNo", sql.Int, srNo)
-        .input("Itm_Id", sql.Int, itm_Id)
-        .input("Inward", sql.Decimal(18, 3), inward)
-        .input("Qty", sql.Decimal(18, 3), inward)
+        .input("Itm_Id", sql.Int, Itm_Id)
+        .input("Inward", sql.Decimal(18, 3), Inward)
+        .input("Qty", sql.Decimal(18, 3), Inward)
         .input("Rate", sql.Decimal(18, 2), 0)
         .input("Uni_ID", sql.Int, Uni_ID)
         .input("Amt", sql.Decimal(18, 2), 0)
@@ -283,7 +284,7 @@ export const insertSalePurDetail = async (
         .input("Pay_Mode", sql.NVarChar, "Party")
         .input("Ac_Id", sql.Int, Ac_Id)
         .input("Style", sql.NVarChar, `${Ac_Code}-${Order_Count}`)
-        .input("Itm_Cat", sql.NVarChar, itmName)
+        .input("Itm_Cat", sql.NVarChar, Itm_Name)
         .input("IGP_ID", sql.Int, igpId || null)
         .input("Location", sql.NVarChar, Product_Type)
         .input("Form_Id", sql.Int, form_Id)
@@ -314,9 +315,12 @@ export const insertSalePurDetail = async (
   }
 };
 
-export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) => {
-
+export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }: any) => {
   try {
+    console.log("🔽 Fetching order data with params:", { fromDate, toDate, Ac_Id, isAdmin, db_name });
+    const DBName = process.env.DB_PREFIX + db_name;
+    const pool = await getDbPool(DBName);
+
     let mainQuery = `
       SELECT M.Id, M.Bill_No, M.Bill_Date,M.LR_No, A.Ac_Name
       FROM Sale_Pur_Main M
@@ -326,37 +330,43 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
 
     if (!isAdmin) {
       mainQuery += ` AND Ac_Id = @Ac_Id`;
+      console.log("🔐 Applying Ac_Id filter for non-admin");
     }
 
-    const mainRequest = pool.request().input("FromDate", sql.Date, fromDate).input("ToDate", sql.Date, toDate);
+    console.log("🟡 Executing mainQuery:", mainQuery);
+
+    const mainRequest = pool.request()
+      .input("FromDate", sql.Date, fromDate)
+      .input("ToDate", sql.Date, toDate);
 
     if (!isAdmin) {
       mainRequest.input("Ac_Id", sql.Int, Ac_Id);
     }
 
     const mainResult = (await mainRequest.query(mainQuery)).recordset;
-    console.log("mainRecord", mainResult);
+    console.log("✅ mainRecord:", mainResult);
 
     if (mainResult.length === 0) {
+      console.log("⚠️ No main records found");
       return [];
     }
 
     const mainBillNos = mainResult.map((record) => `'${record.Bill_No}'`).join(",");
+    console.log("🧾 mainBillNos:", mainBillNos);
 
-    console.log("mainBillNos", mainBillNos);
-
-    const detailResult = (
-      await pool.request().query(`
+    const detailQuery = `
       SELECT 
         D.Bill_No,D.SrNo, D.Itm_Id, I.Itm_Name, D.Qty, D.Uni_ID, U.Uni_Name
       FROM Sale_Pur_Detail D
       LEFT JOIN Uni_Mas U ON D.Uni_ID = U.Uni_ID
       LEFT JOIN Itm_Mas I ON D.Itm_Id = I.Itm_ID
       WHERE D.Bill_No IN (${mainBillNos})
-    `)
-    ).recordset;
+    `;
 
+    console.log("🔍 detailQuery:", detailQuery);
 
+    const detailResult = (await pool.request().query(detailQuery)).recordset;
+    console.log("📦 detailResult:", detailResult);
 
     const combinedData = mainResult.map((main) => ({
       Ac_Name: main.Ac_Name,
@@ -373,13 +383,15 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin }: any) =>
               : Number(detail.Qty).toFixed(3),
         })),
     }));
-    console.log("combine data", combinedData);
+
+    console.log("🧩 Combined Data:", combinedData);
     return combinedData;
   } catch (error) {
-    console.error("Error in getOrderData:", error);
+    console.error("❌ Error in getOrderData:", error);
     throw error;
   }
 };
+
 
 export const deleteOrder = async (Bill_No: number) => {
   const transaction = pool.transaction();

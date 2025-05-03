@@ -37,13 +37,15 @@ export const getAllYearRangesFromComMass = async (): Promise<YearRange[]> => {
         await tempPool.connect();
 
         const result = await tempPool.request().query(`
-            SELECT Year1, Year2, Year_Type
+            SELECT Year1, Year2, Year_Type, DB_Name
             FROM CoAcYr
         `);
+
         return result.recordset.map((row) => ({
             year1: row.Year1,
             year2: row.Year2,
-            year_type: row.Year_Type
+            year_type: row.Year_Type,
+            db_name: row.DB_Name?.replace(/\.mdf$/i, "")
         }));
     } catch (err) {
         console.error("❌ Error fetching year ranges from ComMas:", err);

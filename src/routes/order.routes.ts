@@ -2,6 +2,7 @@ import { Router } from "express";
 import { errorResponse, successResponse } from "../utils/responseHelper";
 import { authVerify } from "../middleware/middleware";
 import { insertSalePurMain, getOrderData, getLrNo, getBillNo, deleteOrder } from "../controllers/order.controller";
+import { getAllYearRangesFromComMass } from "../utils/dbFunctions";
 
 const router = Router();
 
@@ -76,10 +77,11 @@ router.post("/insertSalePurMain", authVerify, async (req, res) => {
 
 
 router.get("/OrderData", authVerify, async (req, res) => {
-  const { fromDate, toDate } = req.query;
+  const { fromDate, toDate, db_name } = req.query;
   const { isAdmin, Id: Ac_Id } = req.user;
+  console.log("🔽 Fetching order data with params:", { fromDate, toDate, Ac_Id, isAdmin, db_name });
   try {
-    const result = await getOrderData({ fromDate, toDate, Ac_Id, isAdmin });
+    const result = await getOrderData({ fromDate, toDate, Ac_Id, isAdmin, db_name });
     return successResponse(res, result, "Order data fetched successfully.");
   } catch (error) {
     return errorResponse(res, (error as Error).message);
@@ -91,6 +93,16 @@ router.delete("/deleteOrder", authVerify, async (req, res) => {
     const { Bill_No } = req.body;
     const result = await deleteOrder(Bill_No);
     return successResponse(res, result, "Order deleted successfully.");
+  } catch (error) {
+    return errorResponse(res, (error as Error).message);
+  }
+});
+
+
+router.get("/getAllYear", authVerify, async (req, res) => {
+  try {
+    const yearRanges = await getAllYearRangesFromComMass();
+    return successResponse(res, yearRanges, "Year ranges fetched successfully.");
   } catch (error) {
     return errorResponse(res, (error as Error).message);
   }
