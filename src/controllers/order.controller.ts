@@ -31,7 +31,7 @@ export const insertSalePurMain = async (
   try {
     await transaction.begin();
     const sysTimeFormatted = new Date().toTimeString().slice(0, 8);
-
+    const Total_Qty = details.reduce((acc: number, item: SalePurDetailRow) => acc + item.Inward, 0).toFixed(3);
     if (mode === "add") {
       const fullBillNo = `${Bill_No}`;
       const billType = `${Ac_Code}-${Order_Count}`;
@@ -42,7 +42,6 @@ export const insertSalePurMain = async (
         autoNumber(pool, "Sale_Pur_Main", "Book_V_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId}`),
         autoNumber(pool, "Sale_Pur_Main", "V_No", `Type = '${Type}'`)
       ]);
-
       const insertQuery = `
         INSERT INTO Sale_Pur_Main (
           Id, Type_Id, Book_V_No, V_No, Book_Id, Book_Ac_Id,
@@ -81,7 +80,7 @@ export const insertSalePurMain = async (
         .input("Bill_Date", sql.DateTime, Bill_Date)
         .input("Gross_Amt", sql.Decimal(18, 2), 0)
         .input("Total_Amount", sql.Decimal(18, 2), 0)
-        .input("Total_Qty", sql.Decimal(18, 2), 0)
+        .input("Total_Qty", sql.Decimal(18, 2), Total_Qty)
         .input("Total_Sundry_Disc_Amt", sql.Decimal(18, 2), 0)
         .input("Round_Off", sql.Decimal(18, 2), 0)
         .input("Net_Amt", sql.Decimal(18, 2), 0)
@@ -121,6 +120,7 @@ export const insertSalePurMain = async (
         Bill_Date,
         Our_Shop_Ac
       );
+      console.log(Total_Qty);
     } else {
       // In update mode, just update the edit timestamp
       const fetchQuery = `
@@ -132,7 +132,7 @@ export const insertSalePurMain = async (
       const { Id: id, Type_Id: typeId } = fetchResult.recordset[0];
       const updateQuery = `
         UPDATE Sale_Pur_Main
-        SET Sys_Date_Edit = @Sys_Date, Sys_Time_Edit = @Sys_Time
+        SET Sys_Date_Edit = @Sys_Date, Sys_Time_Edit = @Sys_Time, Total_Qty = @Total_Qty
         WHERE Bill_No = @Bill_No AND Ac_Id = @Ac_Id
       `;
 
@@ -142,6 +142,7 @@ export const insertSalePurMain = async (
         .input("Sys_Time", sql.VarChar(8), sysTimeFormatted)
         .input("Bill_No", sql.Int, Bill_No)
         .input("Ac_Id", sql.Int, Ac_Id)
+        .input("Total_Qty", sql.Decimal(18, 2), Total_Qty)
         .query(updateQuery);
 
       // You may still want to update details
@@ -158,6 +159,7 @@ export const insertSalePurMain = async (
         Bill_Date,
         Our_Shop_Ac
       );
+      console.log("Total_Qty", Total_Qty);
     }
 
     await transaction.commit();
@@ -315,9 +317,9 @@ export const insertSalePurDetail = async (
   }
 };
 
-export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }: any) => {
+export const getOrderData = async ({ fromDate, toDate, Ac_Id, Ac_Code, isAdmin, db_name }: any) => {
   try {
-    console.log("🔽 Fetching order data with params:", { fromDate, toDate, Ac_Id, isAdmin, db_name });
+    console.log("🔽 Fetching order data with params:", { fromDate, toDate, Ac_Id, Ac_Code, isAdmin, db_name });
     const DBName = process.env.DB_PREFIX + db_name;
     const pool = await getDbPool(DBName);
 
@@ -342,33 +344,33 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
     if (!isAdmin) {
       mainRequest.input("Ac_Id", sql.Int, Ac_Id);
     }
-
     const mainResult = (await mainRequest.query(mainQuery)).recordset;
-    console.log("✅ mainRecord:", mainResult);
-
     if (mainResult.length === 0) {
       console.log("⚠️ No main records found");
       return [];
     }
-
     const mainBillNos = mainResult.map((record) => `'${record.Bill_No}'`).join(",");
-    console.log("🧾 mainBillNos:", mainBillNos);
-
     const detailQuery = `
       SELECT 
-        D.Bill_No,D.SrNo, D.Itm_Id, I.Itm_Name, D.Qty, D.Uni_ID, U.Uni_Name
+        D.Bill_No,
+        D.SrNo, 
+        D.Itm_Id, 
+        I.Itm_Name, 
+        D.Qty, 
+        D.Uni_ID, 
+        U.Uni_Name,
+        IG.IGP_NAME
       FROM Sale_Pur_Detail D
       LEFT JOIN Uni_Mas U ON D.Uni_ID = U.Uni_ID
       LEFT JOIN Itm_Mas I ON D.Itm_Id = I.Itm_ID
+      LEFT JOIN Itm_Grp IG ON I.IGP_ID = IG.IGP_ID
       WHERE D.Bill_No IN (${mainBillNos})
     `;
 
-    console.log("🔍 detailQuery:", detailQuery);
-
     const detailResult = (await pool.request().query(detailQuery)).recordset;
-    console.log("📦 detailResult:", detailResult);
 
     const combinedData = mainResult.map((main) => ({
+      Ac_Code: main.Ac_Code,
       Ac_Name: main.Ac_Name,
       Bill_No: main.Bill_No,
       Bill_Date: main.Bill_Date,
@@ -383,8 +385,6 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
               : Number(detail.Qty).toFixed(3),
         })),
     }));
-
-    console.log("🧩 Combined Data:", combinedData);
     return combinedData;
   } catch (error) {
     console.error("❌ Error in getOrderData:", error);

@@ -8,8 +8,11 @@ export const getAllItem = async () => {
             Itm_Mas.Itm_Name,
             Itm_Mas.Sale_Rate,
             Itm_Mas.Uni_ID,
-            Uni_Mas.Uni_Name
-            FROM Itm_Mas JOIN Uni_Mas ON Itm_Mas.Uni_ID = Uni_Mas.Uni_ID
+            Uni_Mas.Uni_Name,
+            Itm_Grp.IGP_NAME
+            FROM Itm_Mas
+            JOIN Uni_Mas ON Itm_Mas.Uni_ID = Uni_Mas.Uni_ID
+            JOIN Itm_Grp ON Itm_Mas.IGP_ID = Itm_Grp.IGP_ID
 `);
   return existingItems.recordset;
 };
@@ -51,10 +54,12 @@ export const getFavorite = async (payload: any) => {
         IM.Sale_Rate, 
         IM.Pur_Rate,
         IM.Uni_ID,
-        UM.Uni_Name
+        UM.Uni_Name,
+        IG.IGP_NAME
       FROM [Itm_User_Fav] UF
       JOIN [Itm_Mas] IM ON UF.Itm_Id = IM.Itm_ID
       JOIN [Uni_Mas] UM ON IM.Uni_ID = UM.Uni_ID
+      JOIN [Itm_Grp] IG ON IM.IGP_ID = IG.IGP_ID
       WHERE UF.Ac_Id = @Ac_Id
     `);
 
