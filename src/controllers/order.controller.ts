@@ -31,7 +31,8 @@ export const insertSalePurMain = async (
   try {
     await transaction.begin();
     const sysTimeFormatted = new Date().toTimeString().slice(0, 8);
-    const Total_Qty = details.reduce((acc: number, item: SalePurDetailRow) => acc + item.Inward, 0).toFixed(3);
+    const Total_Qty = parseFloat(details.reduce((acc: number, item: SalePurDetailRow) => acc + item.Inward, 0).toFixed(3));
+
     if (mode === "add") {
       const fullBillNo = `${Bill_No}`;
       const billType = `${Ac_Code}-${Order_Count}`;
@@ -80,7 +81,7 @@ export const insertSalePurMain = async (
         .input("Bill_Date", sql.DateTime, Bill_Date)
         .input("Gross_Amt", sql.Decimal(18, 2), 0)
         .input("Total_Amount", sql.Decimal(18, 2), 0)
-        .input("Total_Qty", sql.Decimal(18, 2), Total_Qty)
+        .input("Total_Qty", sql.Real, Total_Qty)
         .input("Total_Sundry_Disc_Amt", sql.Decimal(18, 2), 0)
         .input("Round_Off", sql.Decimal(18, 2), 0)
         .input("Net_Amt", sql.Decimal(18, 2), 0)
@@ -142,7 +143,7 @@ export const insertSalePurMain = async (
         .input("Sys_Time", sql.VarChar(8), sysTimeFormatted)
         .input("Bill_No", sql.Int, Bill_No)
         .input("Ac_Id", sql.Int, Ac_Id)
-        .input("Total_Qty", sql.Decimal(18, 2), Total_Qty)
+        .input("Total_Qty", sql.Real, Total_Qty)
         .query(updateQuery);
 
       // You may still want to update details
@@ -317,14 +318,14 @@ export const insertSalePurDetail = async (
   }
 };
 
-export const getOrderData = async ({ fromDate, toDate, Ac_Id, Ac_Code, isAdmin, db_name }: any) => {
+export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }: any) => {
   try {
-    console.log("🔽 Fetching order data with params:", { fromDate, toDate, Ac_Id, Ac_Code, isAdmin, db_name });
+    console.log("🔽 Fetching order data with params:", { fromDate, toDate, Ac_Id, isAdmin, db_name });
     const DBName = process.env.DB_PREFIX + db_name;
     const pool = await getDbPool(DBName);
 
     let mainQuery = `
-      SELECT M.Id, M.Bill_No, M.Bill_Date,M.LR_No, A.Ac_Name
+      SELECT M.Id, M.Bill_No, M.Bill_Date,M.LR_No, A.Ac_Name,A.Ac_Code
       FROM Sale_Pur_Main M
       JOIN Ac_Mas A ON M.Ac_Id = A.Id
       WHERE M.Bill_Date BETWEEN @FromDate AND @ToDate
@@ -385,6 +386,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, Ac_Code, isAdmin, 
               : Number(detail.Qty).toFixed(3),
         })),
     }));
+    console.log("🟢 Combined data:", combinedData);
     return combinedData;
   } catch (error) {
     console.error("❌ Error in getOrderData:", error);
