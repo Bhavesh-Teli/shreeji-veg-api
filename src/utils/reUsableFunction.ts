@@ -51,14 +51,10 @@ export const findRecReturn = async (
   if (whereCondition && whereCondition.trim() !== '') {
     query += ` WHERE ${whereCondition}`;
   }
-  console.log("query",query)
 
   try {
     const result = await pool.request().query(query);
-    console.log("result",result)
     const rows = result.recordset;
-   
-    console.log("rows",rows)
 
     if (rows && rows.length > 0) {
       const value = rows[0][selectField]; // Access the first row and field

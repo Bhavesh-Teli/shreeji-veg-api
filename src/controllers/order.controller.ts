@@ -1,7 +1,8 @@
-import { pool, sql, baseDbConfig } from "../config/dbConfig";
+import { pool, sql } from "../config/dbConfig";
 import { getDbPool } from "../utils/dbPoolManager";
 import { autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
-
+import { io } from "../app";
+import { sendNotification } from "./notification.controller";
 // Static values
 const bookId = 25;
 const bookAcId = 60;
@@ -121,7 +122,14 @@ export const insertSalePurMain = async (
         Bill_Date,
         Our_Shop_Ac
       );
-      console.log(Total_Qty);
+
+      await sendNotification({
+        noti: `New order placed ${Bill_No} ${Ac_Code} ${Bill_Date}`,
+        cat: "Order",
+        userType: "User",
+        Ac_Id: Ac_Id,
+      });
+
     } else {
       // In update mode, just update the edit timestamp
       const fetchQuery = `
@@ -161,9 +169,16 @@ export const insertSalePurMain = async (
         Our_Shop_Ac
       );
       console.log("Total_Qty", Total_Qty);
+      await sendNotification({
+        noti: `Order updated ${Bill_No} ${Ac_Code} ${Bill_Date}`,
+        cat: "Order",
+        userType: "User",
+        Ac_Id: Ac_Id,
+      });
     }
 
     await transaction.commit();
+
   } catch (error: any) {
     await transaction.rollback();
     throw error;
@@ -199,9 +214,7 @@ export const insertSalePurDetail = async (
     }
 
     for (let i = 0; i < details.length; i++) {
-      console.log(`\n🔁 Processing row ${i + 1}/${details.length}`);
       const { Itm_Id, Inward, Uni_ID, Itm_Name } = details[i];
-      // console.log("📦 Row data:", row);
 
       const srNo = i + 1;
       // const itm_Id = row.Itm_Id || 0;
@@ -235,24 +248,6 @@ export const insertSalePurDetail = async (
             : `${parseFloat(qtyFormatted)} ${Inward <= 0.999 ? "Gm" : "Kg"}`;
       }
 
-      console.log("📤 Executing INSERT with values:", {
-        srNo,
-        Itm_Id,
-        Inward,
-        Uni_ID,
-        Itm_Name,
-        Product_Type,
-        form_Id,
-        dNo,
-        Ac_Id,
-        Ac_Code,
-        id,
-        typeId,
-        Order_Count,
-        Bill_No,
-        Bill_Date,
-        Our_Shop_Ac
-      });
       const insertQuery = `
               INSERT INTO Sale_Pur_Detail (
                 SrNo, Itm_Id, inward, Qty, Rate, Uni_ID, Amt, Gross_Amt, Gross_Rate, Disc_Per, Disc_Amt, 
