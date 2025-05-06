@@ -6,13 +6,13 @@ interface NotificationPayload {
     noti: string;
     cat: string;
     userType: string;
-    Ac_Id: number;
+    Ac_Id: number;  
 }
+const dbName = process.env.DB_PREFIX + "ComMas";
 export const sendNotification = async (payload: NotificationPayload) => {
     const { noti, cat, userType, Ac_Id } = payload;
 
     try {
-        const dbName = process.env.DB_PREFIX + "ComMas";
         const pool = await getDbPool(dbName);
 
         await pool.request()
@@ -39,5 +39,46 @@ export const sendNotification = async (payload: NotificationPayload) => {
         io.emit("OrderNotification", socketPayload);
     } catch (err) {
         console.error("Error sending order notification:", err);
+    }
+};
+
+export const getNotification = async () => {
+    try {
+        const pool = await getDbPool(dbName);
+
+        const result = await pool.request()
+            .query(`
+          SELECT 
+            Noti_Hist.Id,
+            Noti_Hist.Noti,
+            Noti_Hist.Cat,
+            Noti_Hist.User_Type,
+            Noti_Hist.Noti_Date_Time,
+            Noti_Hist.Seen,
+            Noti_Hist.Ac_Id
+          FROM [dbo].[Noti_Hist]
+        `);
+
+        return result.recordset;
+    } catch (err) {
+        console.error("Error fetching notifications:", err);
+        throw err;
+    }
+};
+
+export const updateNotification = async (Ac_Id: any) => {
+    try {
+        const pool = await getDbPool(dbName);
+
+        await pool.request()
+            .input("Ac_Id", sql.Int, Ac_Id)
+            .query(`
+          UPDATE [dbo].[Noti_Hist]
+          SET Seen = 1
+          WHERE Ac_Id = @Ac_Id
+        `);
+    } catch (err) {
+        console.error("Error updating notifications:", err);
+        throw err;
     }
 };
