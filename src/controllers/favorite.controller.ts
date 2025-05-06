@@ -1,11 +1,17 @@
 import { pool } from "../config/dbConfig";
 
-export const getAllItem = async () => {
+export const getAllItem = async (lang: 'en' | 'hi' | 'gu') => {
+  let itemNameColumn = 'Itm_Mas.Itm_Name'; 
+  if (lang === 'hi') {
+    itemNameColumn = 'Itm_Mas.Itm_Name_1'; 
+  } else if (lang === 'gu') {
+    itemNameColumn = 'Itm_Mas.Itm_Name_2'; 
+  }
   const existingItems = await pool
     .request()
     .query(`SELECT 
             Itm_Mas.Itm_ID,
-            Itm_Mas.Itm_Name,
+            ${itemNameColumn} AS Itm_Name,
             Itm_Mas.Sale_Rate,
             Itm_Mas.Uni_ID,
             Uni_Mas.Uni_Name,

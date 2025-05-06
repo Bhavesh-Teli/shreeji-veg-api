@@ -1,7 +1,6 @@
 import { pool, sql } from "../config/dbConfig";
 import { getDbPool } from "../utils/dbPoolManager";
 import { autoNumber, findRecReturn, getCount } from "../utils/reUsableFunction";
-import { io } from "../app";
 import { sendNotification } from "./notification.controller";
 // Static values
 const bookId = 25;

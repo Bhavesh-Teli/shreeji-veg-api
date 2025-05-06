@@ -7,7 +7,7 @@ const router = Router();
 
 router.get("/getAllItem", async (req: Request, res: Response) => {
   try {
-    const result = await getAllItem();
+    const result = await getAllItem(req.query.lang as 'en' | 'hi' | 'gu');
     return successResponse(res, result, "Fetched all items successfully");
   } catch (error) {
     return errorResponse(res, (error as Error).message);
@@ -30,6 +30,7 @@ router.get("/getFavorites", authVerify, async (req: Request, res: Response) => {
   try {
     const payload = {
       Ac_Id: req.user.Id,
+      lang: req.query.lang as 'en' | 'hi' | 'gu',
     };
     const result = await getFavorite(payload);
     return successResponse(res, result, "Fetched favorites successfully");
