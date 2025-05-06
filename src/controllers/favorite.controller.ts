@@ -46,11 +46,11 @@ export const addFavorite = async (payload: any) => {
 
 export const getFavorite = async (payload: any) => {
   const { Ac_Id, lang } = payload;
-  let itemNameColumn = 'Itm_Mas.Itm_Name'; 
+  let itemNameColumn = 'IM.Itm_Name'; 
   if (lang === 'hi') {
-    itemNameColumn = 'Itm_Mas.Itm_Name_1'; 
+    itemNameColumn = 'IM.Itm_Name_1'; 
   } else if (lang === 'gu') {
-    itemNameColumn = 'Itm_Mas.Itm_Name_2'; 
+    itemNameColumn = 'IM.Itm_Name_2'; 
   }
 
   const favorites = await pool
@@ -62,7 +62,7 @@ export const getFavorite = async (payload: any) => {
         UF.Ac_Id, 
         UF.Itm_Id, 
         IM.Itm_Code, 
-        ${itemNameColumn} as Itm_Name, 
+        ${itemNameColumn} AS Itm_Name, 
         IM.Sale_Rate, 
         IM.Pur_Rate,
         IM.Uni_ID,

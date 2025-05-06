@@ -25,3 +25,5 @@ router.put("/updateNotification", authVerify, async (req, res) => {
         return errorResponse(res, (error as Error).message);
     }
 });
+
+export default router;
