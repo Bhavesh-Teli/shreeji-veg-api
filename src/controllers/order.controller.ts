@@ -324,76 +324,72 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
     const DBName = process.env.DB_PREFIX + db_name;
     const pool = await getDbPool(DBName);
 
-    let mainQuery = `
-      SELECT M.Id, M.Bill_No, M.Bill_Date,M.LR_No, A.Ac_Name,A.Ac_Code
+    const optimizedQuery = `
+      SELECT 
+        M.Bill_No, M.Bill_Date, M.LR_No, M.Id,
+        A.Ac_Name, A.Ac_Code,
+        D.SrNo, D.Itm_Id, I.Itm_Name, 
+        D.Qty, D.Uni_ID, U.Uni_Name, IG.IGP_NAME
       FROM Sale_Pur_Main M
       JOIN Ac_Mas A ON M.Ac_Id = A.Id
+      JOIN Sale_Pur_Detail D ON M.Bill_No = D.Bill_No
+      LEFT JOIN Uni_Mas U ON D.Uni_ID = U.Uni_ID
+      LEFT JOIN Itm_Mas I ON D.Itm_Id = I.Itm_ID
+      LEFT JOIN Itm_Grp IG ON I.IGP_ID = IG.IGP_ID
       WHERE M.Bill_Date BETWEEN @FromDate AND @ToDate
+      ${!isAdmin ? "AND M.Ac_Id = @Ac_Id" : ""}
+      ORDER BY M.Bill_No, D.SrNo
     `;
 
-    if (!isAdmin) {
-      mainQuery += ` AND Ac_Id = @Ac_Id`;
-      console.log("🔐 Applying Ac_Id filter for non-admin");
-    }
-
-    console.log("🟡 Executing mainQuery:", mainQuery);
-
-    const mainRequest = pool.request()
+    const request = pool.request()
       .input("FromDate", sql.Date, fromDate)
       .input("ToDate", sql.Date, toDate);
 
     if (!isAdmin) {
-      mainRequest.input("Ac_Id", sql.Int, Ac_Id);
+      request.input("Ac_Id", sql.Int, Ac_Id);
     }
-    const mainResult = (await mainRequest.query(mainQuery)).recordset;
-    if (mainResult.length === 0) {
-      console.log("⚠️ No main records found");
+
+    const result = await request.query(optimizedQuery);
+    const records = result.recordset;
+
+    if (!records.length) {
+      console.log("⚠️ No records found");
       return [];
     }
-    const mainBillNos = mainResult.map((record) => `'${record.Bill_No}'`).join(",");
-    const detailQuery = `
-      SELECT 
-        D.Bill_No,
-        D.SrNo, 
-        D.Itm_Id, 
-        I.Itm_Name, 
-        D.Qty, 
-        D.Uni_ID, 
-        U.Uni_Name,
-        IG.IGP_NAME
-      FROM Sale_Pur_Detail D
-      LEFT JOIN Uni_Mas U ON D.Uni_ID = U.Uni_ID
-      LEFT JOIN Itm_Mas I ON D.Itm_Id = I.Itm_ID
-      LEFT JOIN Itm_Grp IG ON I.IGP_ID = IG.IGP_ID
-      WHERE D.Bill_No IN (${mainBillNos})
-    `;
 
-    const detailResult = (await pool.request().query(detailQuery)).recordset;
+    // Group by Bill_No
+    const groupedData: any = {};
+    for (const row of records) {
+      if (!groupedData[row.Bill_No]) {
+        groupedData[row.Bill_No] = {
+          Ac_Code: row.Ac_Code,
+          Ac_Name: row.Ac_Name,
+          Bill_No: row.Bill_No,
+          Bill_Date: row.Bill_Date,
+          Order_Count: row.LR_No,
+          Details: [],
+        };
+      }
 
-    const combinedData = mainResult.map((main) => ({
-      Ac_Code: main.Ac_Code,
-      Ac_Name: main.Ac_Name,
-      Bill_No: main.Bill_No,
-      Bill_Date: main.Bill_Date,
-      Order_Count: main.LR_No,
-      Details: detailResult
-        .filter((detail) => detail.Bill_No === main.Bill_No)
-        .map((detail) => ({
-          ...detail,
-          Qty:
-            Number(detail.Qty) % 1 === 0
-              ? Number(detail.Qty)
-              : Number(detail.Qty).toFixed(3),
-        })),
-    }));
-    console.log("🟢 Combined data:", combinedData);
-    return combinedData;
+      groupedData[row.Bill_No].Details.push({
+        SrNo: row.SrNo,
+        Itm_Id: row.Itm_Id,
+        Itm_Name: row.Itm_Name,
+        Qty: Number(row.Qty) % 1 === 0 ? Number(row.Qty) : Number(row.Qty).toFixed(3),
+        Uni_ID: row.Uni_ID,
+        Uni_Name: row.Uni_Name,
+        IGP_NAME: row.IGP_NAME,
+      });
+    }
+
+    const finalData = Object.values(groupedData);
+    console.log("🟢 Combined data length:", finalData.length);
+    return finalData;
   } catch (error) {
     console.error("❌ Error in getOrderData:", error);
     throw error;
   }
 };
-
 
 export const deleteOrder = async (Bill_No: number) => {
   const transaction = pool.transaction();
