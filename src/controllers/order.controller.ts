@@ -314,7 +314,6 @@ export const insertSalePurDetail = async (
 
 export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }: any) => {
   try {
-    console.log("🔽 Fetching order data with params:", { fromDate, toDate, Ac_Id, isAdmin, db_name });
     const DBName = process.env.DB_PREFIX + db_name;
     const pool = await getDbPool(DBName);
 
@@ -347,7 +346,6 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
     const records = result.recordset;
 
     if (!records.length) {
-      console.log("⚠️ No records found");
       return [];
     }
 
@@ -377,7 +375,6 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
     }
 
     const finalData = Object.values(groupedData);
-    console.log("🟢 Combined data length:", finalData.length);
     return finalData;
   } catch (error) {
     console.error("❌ Error in getOrderData:", error);

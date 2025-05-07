@@ -14,6 +14,7 @@ export const shreejiDbConfig = {
   options: {
     encrypt: false, // Set true if using Azure
     trustServerCertificate: true,
+    requestTimeout: 30000 
   },
 };
 
@@ -27,6 +28,7 @@ export const commonDbConfig = {
   options: {
     encrypt: false, // Set true if using Azure
     trustServerCertificate: true,
+    requestTimeout: 30000 
   },
 };
 
@@ -38,6 +40,7 @@ export const baseDbConfig = {
   options: {
     encrypt: false, // Set true if using Azure
     trustServerCertificate: true,
+    requestTimeout: 30000 
   },
 };
 

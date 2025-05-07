@@ -79,7 +79,6 @@ router.post("/insertSalePurMain", authVerify, async (req, res) => {
 router.get("/OrderData", authVerify, async (req, res) => {
   const { fromDate, toDate, db_name } = req.query;
   const { isAdmin, Id: Ac_Id } = req.user;
-  console.log("🔽 Fetching order data with params:", { fromDate, toDate, Ac_Id, isAdmin, db_name });
   try {
     const result = await getOrderData({ fromDate, toDate, Ac_Id, isAdmin, db_name });
     return successResponse(res, result, "Order data fetched successfully.");
