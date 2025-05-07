@@ -82,3 +82,18 @@ export const updateNotification = async (Ac_Id: any) => {
         throw err;
     }
 };
+export const updateAllUnseenNotifications = async () => {
+    try {
+        const pool = await getDbPool(dbName);
+
+        await pool.request()
+            .query(`
+                UPDATE [dbo].[Noti_Hist]
+                SET Seen = 1
+                WHERE Seen = 0
+            `);
+    } catch (err) {
+        console.error("Error updating all unseen notifications:", err);
+        throw err;
+    }
+};
