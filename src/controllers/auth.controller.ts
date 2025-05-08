@@ -2,6 +2,7 @@ import { getLastIdFromCommonDB, insertIntoCommonDB, pool } from "../config/dbCon
 import jwt from "jsonwebtoken";
 import { IUser } from "../types/IUser";
 import { SendWhatsappMessage } from "../utils/whatsappApi";
+import { sendNotification } from "./notification.controller";
 
 const OTP_EXPIRY = 5 * 60 * 1000;
 const otpStorage = new Map<string, { otp: string; expiresAt: number }>();
@@ -75,6 +76,12 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
     `);
 
     await insertIntoCommonDB(newId);
+    await sendNotification({
+      noti: `New user registered ${Ac_Name} ${Mobile_No}`,
+      cat: "New User",
+      userType: "User",
+      Ac_Id: newId,
+    });
     await transaction.commit();
 
     otpStorage.delete(Mobile_No);
