@@ -121,9 +121,9 @@ export const insertSalePurMain = async (
         Bill_Date,
         Our_Shop_Ac
       );
-
+      const Ac_Name = (await pool.request().input("Ac_Id", sql.Int, Ac_Id).query(`SELECT Ac_Name FROM Ac_Mas WHERE Id = @Ac_Id`)).recordset[0].Ac_Name;
       await sendNotification({
-        noti: `New order placed ${Bill_No} ${Ac_Code} ${Bill_Date}`,
+        noti: `New order placed ${Bill_No} ${Ac_Name} ${Bill_Date}`,
         cat: "Order",
         userType: "User",
         Ac_Id: Ac_Id,
@@ -168,8 +168,9 @@ export const insertSalePurMain = async (
         Our_Shop_Ac
       );
       console.log("Total_Qty", Total_Qty);
+      const Ac_Name = (await pool.request().input("Ac_Id", sql.Int, Ac_Id).query(`SELECT Ac_Name FROM Ac_Mas WHERE Id = @Ac_Id`)).recordset[0].Ac_Name;
       await sendNotification({
-        noti: `Order updated ${Bill_No} ${Ac_Code} ${Bill_Date}`,
+        noti: `Order updated ${Bill_No} ${Ac_Name} ${Bill_Date}`,
         cat: "Order",
         userType: "User",
         Ac_Id: Ac_Id,

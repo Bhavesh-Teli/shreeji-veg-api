@@ -2,14 +2,8 @@ import { io } from "../app";
 import sql from "mssql";
 import { getDbPool } from "../utils/dbPoolManager";
 
-interface NotificationPayload {
-    noti: string;
-    cat: string;
-    userType: string;
-    Ac_Id: number;  
-}
 const dbName = process.env.DB_PREFIX + "ComMas";
-export const sendNotification = async (payload: NotificationPayload) => {
+export const sendNotification = async (payload: any) => {
     const { noti, cat, userType, Ac_Id } = payload;
 
     try {
@@ -36,9 +30,9 @@ export const sendNotification = async (payload: NotificationPayload) => {
             Ac_Id,
         };
 
-        io.emit("OrderNotification", socketPayload);
+        io.emit("Notification", socketPayload);
     } catch (err) {
-        console.error("Error sending order notification:", err);
+        console.error("Error sending notification:", err);
     }
 };
 
