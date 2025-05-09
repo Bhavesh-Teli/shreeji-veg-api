@@ -4,11 +4,9 @@ import { SendWhatsappMessage } from "../utils/whatsappApi";
 export const getUnapprovedUsers = async () => {
   try {
     const query = `
-      SELECT Id, Ac_Name, Mobile_No, Book_Pass,
-        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
-        State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac
+      SELECT Id, Ac_Name, Mobile_No
       FROM Ac_Mas 
-      WHERE Ac_Code IS NULL`;
+      WHERE Ac_Code IS NULL AND Id != 0`;
 
     const result = await pool.request().query(query);
 
@@ -35,13 +33,14 @@ export const approveUser = async (payload: any) => {
     const userResult = await transaction
       .request()
       .input("Ac_Id", sql.Int, Ac_Id)
-      .query("SELECT Mobile_No FROM Ac_Mas WHERE Id = @Ac_Id");
+      .query("SELECT Mobile_No, Ac_Name FROM Ac_Mas WHERE Id = @Ac_Id");
 
     const mobileNo = userResult.recordset[0]?.Mobile_No;
+    const Ac_Name = userResult.recordset[0]?.Ac_Name;
 
     if (!mobileNo) throw new Error("User not found.");
 
-    const Message = `Your account has been approved by admin. Please login to use the app.`;
+    const Message = `Hi ${Ac_Name},\n\nWe have approved your account as requested through *Shreeji Veg App*.\n\nYou can now Login using your registered ID and password.\n\nThank you,\n*Team Shreeji Veg*`;
     SendWhatsappMessage(mobileNo, Message);
 
     await transaction.commit();
@@ -53,10 +52,3 @@ export const approveUser = async (payload: any) => {
   }
 };
 
-export const rejectUser = async (payload: any) => {
-  const { Ac_Id } = payload;
-  // await prisma.ac_Mas.update({
-  //     where: { Id: Number(Ac_Id) },
-  //     data: { Ac_Code: null },
-  // });
-};

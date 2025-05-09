@@ -17,9 +17,8 @@ export const getCurrentYearDbNameFromComMass = async (): Promise<string> => {
         if (!dbName) throw new Error("DB_Name not found for Year_Type = 'C'");
 
         return dbName;
-    } catch (err) {
-        console.error("❌ Error fetching current DB name:", err);
-        throw err;
+    } catch (err: any) {
+        throw err.message;
     } finally {
         tempPool.close();
     }
@@ -47,9 +46,8 @@ export const getAllYearRangesFromComMass = async (): Promise<YearRange[]> => {
             year_type: row.Year_Type,
             db_name: row.DB_Name?.replace(/\.mdf$/i, "")
         }));
-    } catch (err) {
-        console.error("❌ Error fetching year ranges from ComMas:", err);
-        throw err;
+    } catch (err: any) {
+        throw err.message;
     } finally {
         tempPool.close();
     }

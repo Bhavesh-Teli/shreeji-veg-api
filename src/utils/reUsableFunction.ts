@@ -1,4 +1,3 @@
-import { sql } from "../config/dbConfig";
 import { ConnectionPool } from "mssql";
 
 
@@ -16,9 +15,8 @@ export const autoNumber = async (
   try {
     const result = await pool.request().query(query);
     return (result.recordset[0]?.LastNo ?? 0) + 1;
-  } catch (error) {
-    console.error("Error in autoNumber:", error);
-    throw error;
+  } catch (error: any) {
+    throw error.message;
   }
 };
 
@@ -34,9 +32,8 @@ export const getCount = async (
   try {
     const result = await pool.request().query(query);
     return (result.recordset[0]?.TotalCount ?? 0) + 1;
-  } catch (error) {
-    console.error("Error in getCount:", error);
-    throw error;
+  } catch (error: any) {
+    throw error.message;
   }
 };
 
@@ -65,8 +62,7 @@ export const findRecReturn = async (
     } else {
       return false; // No rows found, return false
     }
-  } catch (error) {
-    console.error('Error executing query:', error);
-    return false; // Return false in case of error
+  } catch (error: any) {
+    throw error.message;
   }
 };

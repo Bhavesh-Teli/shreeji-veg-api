@@ -10,12 +10,12 @@ const otpStorage = new Map<string, { otp: string; expiresAt: number }>();
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 
-export const requestOTP = async (mobileNo: string) => {
+export const requestOTP = async (mobileNo: string, Ac_Name: string) => {
   if (!mobileNo) throw new Error("Mobile number is required");
   const otp = generateOTP();
   otpStorage.set(mobileNo, { otp, expiresAt: Date.now() + OTP_EXPIRY });
 
-  const Message = `Your OTP is: ${otp}`;
+  const Message = `Dear ${Ac_Name}, \n*${otp}* is your one time password (OTP). Please enter the OTP to proceed.\nThank you,\nTeam Shreeji Veg`;
   SendWhatsappMessage(mobileNo, Message);
 
   return { message: "OTP sent successfully" };
@@ -83,6 +83,9 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
       Ac_Id: newId,
     });
     await transaction.commit();
+    const welcomeMessage = `*Welcome to Shreeji Veg App*, Dear ${Ac_Name},\n\nYou have successfully created your account.\n\n*Username:* ${Mobile_No}\n*Password:* ${Book_Pass}\n\nPlease wait for login — your account is pending admin approval. You will receive a confirmation message once your account is activated.\n\nThank you,\n*Team Shreeji Veg *`;
+
+    SendWhatsappMessage(Mobile_No, welcomeMessage);
 
     otpStorage.delete(Mobile_No);
 

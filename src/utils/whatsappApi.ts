@@ -1,17 +1,21 @@
 import { exec } from "child_process";
 
-export const SendWhatsappMessage = (mobileNo:string,message:string) => {
-    const cmd = `${process.env.EXEC_FILE_PATH} T N ${process.env.WHATSAPP_API_KEY} 91${mobileNo} "${message}"`;
-    console.log(`Executing command: ${cmd}`); 
-    exec(cmd, (error, stdout, stderr) => {
-      if (error) {
-        throw new Error(`Error sending WhatsApp message: ${error.message}`);
-        return;
-      }
-      if (stderr) {
-        throw new Error(`STDERR while sending WhatsApp message: ${stderr}`);
-        return;
-      }
-      console.log(`OTP sent successfully: ${stdout}`);
-    });
-  };
+export const SendWhatsappMessage = (mobileNo: string, message: string) => {
+  // Escape message for shell
+  const escapedMessage = message
+    .replace(/"/g, '\\"')       // Escape double quotes
+    .replace(/\n/g, '\\n');     // Preserve line breaks
+
+  const cmd = `${process.env.EXEC_FILE_PATH} T N ${process.env.WHATSAPP_API_KEY} 91${mobileNo} "${escapedMessage}"`;
+
+  exec(cmd, (error, stdout, stderr) => {
+    if (error) {
+      throw error;
+      return;
+    }
+    if (stderr) {
+      throw stderr;
+      return;
+    }
+  });
+};

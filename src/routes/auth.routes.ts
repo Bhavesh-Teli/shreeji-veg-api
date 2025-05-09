@@ -8,7 +8,8 @@ const router = Router();
 router.post("/requestOTP", async (req, res) => {
     try {
         const mobileNo = req.body.mobileNo;
-        const result = await requestOTP(mobileNo);
+        const Ac_Name = req.body.Ac_Name;
+        const result = await requestOTP(mobileNo, Ac_Name);
         return successResponse(res, result, "OTP sent successfully");
     } catch (error) {
         return errorResponse(res, (error as Error).message);
@@ -35,10 +36,10 @@ router.post("/login", async (req, res) => {
         return errorResponse(res, (error as Error).message);
     }
 });
-router.get("/getCurrentUser",authVerify,async (req, res) => {
+router.get("/getCurrentUser", authVerify, async (req, res) => {
     try {
         const payload = req.user.Id;
-       
+
         const result = await getCurrentUser(payload);
         return successResponse(res, result, "Login successful.");
     } catch (error) {
@@ -46,12 +47,12 @@ router.get("/getCurrentUser",authVerify,async (req, res) => {
     }
 });
 
-router.post("/logout",authVerify,async (req, res) => {
+router.post("/logout", authVerify, async (req, res) => {
     try {
         res.clearCookie("Shreeji_Veg").status(200).json({
             success: true,
             message: "Logged out successfully.",
-          });
+        });
     } catch (error) {
         return errorResponse(res, (error as Error).message);
     }

@@ -8,26 +8,29 @@ import http from "http";
 import registerRoutes from "./routes/index";
 import { connectDB } from "./config/dbConfig";
 
+
 dotenv.config();
+const ALLOWED_ORIGINS = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : [];
 
 const app = express();
 const server = http.createServer(app);
 export const io = new Server(server, {
   cors: {
-    // origin: process.env.CORS_ORIGIN,
-    origin: '*',
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
+
 app.use(
   cors({
-    // origin: process.env.CORS_ORIGIN,
-    origin: '*',
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   })
 );
+
+app.options('*', cors()); // Preflight support
 
 app.use(express.json());
 app.use(morgan("dev"));
@@ -36,10 +39,8 @@ app.use(cookieParser());
 registerRoutes(app);
 
 io.on("connection", (socket) => {
-  console.log("New client connected");
-
   socket.on("disconnect", () => {
-    console.log("Client disconnected");
+
   });
 });
 

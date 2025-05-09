@@ -22,7 +22,6 @@ router.post("/addToFavorites", authVerify, async (req: Request, res: Response) =
     const result = await addFavorite(payload);
     return successResponse(res, result, "Successfully add to favorite");
   } catch (error) {
-    console.log(error)
     return errorResponse(res, (error as Error).message);
   }
 });
@@ -35,7 +34,6 @@ router.get("/getFavorites", authVerify, async (req: Request, res: Response) => {
     const result = await getFavorite(payload);
     return successResponse(res, result, "Fetched favorites successfully");
   } catch (error) {
-    console.log(error)
     return errorResponse(res, (error as Error).message);
   }
 });

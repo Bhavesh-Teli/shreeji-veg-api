@@ -5,7 +5,6 @@ import { getDbPool } from "../utils/dbPoolManager";
 const dbName = process.env.DB_PREFIX + "ComMas";
 export const sendNotification = async (payload: any) => {
     const { noti, cat, userType, Ac_Id } = payload;
-
     try {
         const pool = await getDbPool(dbName);
 
@@ -31,8 +30,8 @@ export const sendNotification = async (payload: any) => {
         };
 
         io.emit("Notification", socketPayload);
-    } catch (err) {
-        console.error("Error sending notification:", err);
+    } catch (err: any) {
+        throw err.message;
     }
 };
 
@@ -52,11 +51,9 @@ export const getNotification = async () => {
             Noti_Hist.Ac_Id
           FROM [dbo].[Noti_Hist]
         `);
-
         return result.recordset;
-    } catch (err) {
-        console.error("Error fetching notifications:", err);
-        throw err;
+    } catch (err: any) {
+        throw err.message;
     }
 };
 
@@ -71,9 +68,8 @@ export const updateNotification = async (Ac_Id: any) => {
           SET Seen = 1
           WHERE Ac_Id = @Ac_Id
         `);
-    } catch (err) {
-        console.error("Error updating notifications:", err);
-        throw err;
+    } catch (err: any) {
+        throw err.message;
     }
 };
 export const updateAllUnseenNotifications = async () => {
@@ -86,8 +82,7 @@ export const updateAllUnseenNotifications = async () => {
                 SET Seen = 1
                 WHERE Seen = 0
             `);
-    } catch (err) {
-        console.error("Error updating all unseen notifications:", err);
-        throw err;
+    } catch (err: any) {
+        throw err.message;
     }
 };

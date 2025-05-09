@@ -1,11 +1,11 @@
 import { pool } from "../config/dbConfig";
 
 export const getAllItem = async (lang: 'en' | 'hi' | 'gu') => {
-  let itemNameColumn = 'Itm_Mas.Itm_Name'; 
+  let itemNameColumn = 'Itm_Mas.Itm_Name';
   if (lang === 'hi') {
-    itemNameColumn = 'Itm_Mas.Part_Name'; 
+    itemNameColumn = 'Itm_Mas.Part_Name';
   } else if (lang === 'gu') {
-    itemNameColumn = 'Itm_Mas.Ex_Location'; 
+    itemNameColumn = 'Itm_Mas.Ex_Location';
   }
   const existingItems = await pool
     .request()
@@ -46,11 +46,11 @@ export const addFavorite = async (payload: any) => {
 
 export const getFavorite = async (payload: any) => {
   const { Ac_Id, lang } = payload;
-  let itemNameColumn = 'IM.Itm_Name'; 
+  let itemNameColumn = 'IM.Itm_Name';
   if (lang === 'hi') {
-    itemNameColumn = 'IM.Part_Name'; 
+    itemNameColumn = 'IM.Part_Name';
   } else if (lang === 'gu') {
-    itemNameColumn = 'IM.Ex_Location'; 
+    itemNameColumn = 'IM.Ex_Location';
   }
 
   const favorites = await pool

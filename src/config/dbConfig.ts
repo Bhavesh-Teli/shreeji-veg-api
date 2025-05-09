@@ -4,20 +4,6 @@ import { getCurrentYearDbNameFromComMass } from "../utils/dbFunctions";
 
 dotenv.config();
 
-// Connection configurations for Shreeji Veg database
-export const shreejiDbConfig = {
-  user: process.env.SHREEJI_DB_USER || "",
-  password: process.env.SHREEJI_DB_PASSWORD || "",
-  server: process.env.SHREEJI_DB_SERVER || "",
-  database: process.env.SHREEJI_DB_DATABASE || "",
-  port: Number(process.env.SHREEJI_DB_PORT) || 1433,
-  options: {
-    encrypt: false, // Set true if using Azure
-    trustServerCertificate: true,
-    requestTimeout: 30000 
-  },
-};
-
 // Connection configurations for Common Database
 export const commonDbConfig = {
   user: process.env.COMMON_DB_USER || "",
@@ -28,7 +14,7 @@ export const commonDbConfig = {
   options: {
     encrypt: false, // Set true if using Azure
     trustServerCertificate: true,
-    requestTimeout: 30000 
+    requestTimeout: 30000
   },
 };
 
@@ -40,7 +26,7 @@ export const baseDbConfig = {
   options: {
     encrypt: false, // Set true if using Azure
     trustServerCertificate: true,
-    requestTimeout: 30000 
+    requestTimeout: 30000
   },
 };
 
@@ -56,7 +42,6 @@ export const connectDB = async () => {
       ...baseDbConfig,
       database: fullDbName,
     });
-    console.log("Database: ", fullDbName);
     await pool.connect();
     console.log("Connected to ShreejiVegDB ✅");
   } catch (err) {

@@ -167,7 +167,6 @@ export const insertSalePurMain = async (
         Bill_Date,
         Our_Shop_Ac
       );
-      console.log("Total_Qty", Total_Qty);
       const Ac_Name = (await pool.request().input("Ac_Id", sql.Int, Ac_Id).query(`SELECT Ac_Name FROM Ac_Mas WHERE Id = @Ac_Id`)).recordset[0].Ac_Name;
       await sendNotification({
         noti: `${Ac_Name} has updated Order ${Bill_No} ${Bill_Date}`,
@@ -303,13 +302,10 @@ export const insertSalePurDetail = async (
         .input("Manu_Order_Close", sql.Bit, Our_Shop_Ac);
 
       await request.query(insertQuery);
-      console.log("✅ Row inserted successfully!");
     }
 
-    console.log("🎉 All Sale_Pur_Detail records inserted successfully!");
-  } catch (error) {
-    console.error("❌ Error inserting into Sale_Pur_Detail:", error);
-    throw error;
+  } catch (error: any) {
+    throw error.message;
   }
 };
 
@@ -377,9 +373,8 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
 
     const finalData = Object.values(groupedData);
     return finalData;
-  } catch (error) {
-    console.error("❌ Error in getOrderData:", error);
-    throw error;
+  } catch (error: any) {
+    throw error.message;
   }
 };
 
