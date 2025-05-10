@@ -52,3 +52,20 @@ export const approveUser = async (payload: any) => {
   }
 };
 
+export const getUserList = async () => {
+  try {
+    const query = `
+      SELECT Id, Ac_Name, Mobile_No, Ac_Code,Book_Pass,Our_Shop_Ac
+      FROM Ac_Mas 
+      WHERE Id != 0`;
+
+    const result = await pool.request().query(query);
+
+    return result.recordset; // Returns the list of unapproved users
+  } catch (error: any) {
+    throw new Error("Error fetching unapproved users: " + error.message);
+  }
+}
+
+export const getTime=()=>{
+} 

@@ -139,9 +139,32 @@ export const getCurrentUser = async (Ac_Id: string) => {
   const result = await pool
     .request()
     .input("Id", Ac_Id)
-    .query(`SELECT  Id, Ac_Name, Mobile_No,
-        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
-        State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac FROM Ac_Mas WHERE Id = @Id`);
+    .query(`SELECT  Id, Ac_Name, Mobile_No,Ac_Code
+         Our_Shop_Ac FROM Ac_Mas WHERE Id = @Id`);
   return result.recordset[0];
 }
 
+export const forgotPassword = async (payload: IUser) => {
+    const { Mobile_No } = payload;
+    if (!Mobile_No) throw new Error("Mobile_No is required");
+
+    const result = await pool
+        .request()
+        .input("Mobile_No", Mobile_No)
+        .query(`SELECT Id, Ac_Name, Mobile_No FROM Ac_Mas WHERE Mobile_No = @Mobile_No`);
+
+    const user = result.recordset[0];
+
+    if (!user) throw new Error("User not found");
+
+    const otp = generateOTP();
+    otpStorage.set(Mobile_No, { otp, expiresAt: Date.now() + OTP_EXPIRY });
+
+    const Message = `Dear ${user.Ac_Name}, \n*${otp}* is your one time password (OTP). Please enter the OTP to proceed.\nThank you,\nTeam Shreeji Veg`;
+    SendWhatsappMessage(Mobile_No, Message);
+    
+
+
+
+    return { message: "OTP sent successfully" };
+}

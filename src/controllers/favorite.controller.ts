@@ -43,7 +43,6 @@ export const addFavorite = async (payload: any) => {
     .query(`INSERT INTO [Itm_User_Fav] (Ac_Id, Itm_Id) VALUES (@Ac_Id, @Itm_Id)`);
 };
 
-
 export const getFavorite = async (payload: any) => {
   const { Ac_Id, lang } = payload;
   let itemNameColumn = 'IM.Itm_Name';
@@ -89,3 +88,4 @@ export const removeFavorite = async (payload: any) => {
 
   return deleted.rowsAffected;
 };
+

@@ -12,8 +12,6 @@ const Type = "Purchase Order";
 
 export const getLrNo = async (Ac_Id: number, Bill_Date: string) =>
   await getCount(pool, "Sale_Pur_Main", `Ac_Id = ${Ac_Id} AND Bill_Date = '${Bill_Date}'`);
-export const getBillNo = async () =>
-  await autoNumber(pool, "Sale_Pur_Main", "Bill_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId} AND Branch_Id = ${branchId}`);
 
 export const addSalePurMain = async (
   mode: "add" | "edit",
