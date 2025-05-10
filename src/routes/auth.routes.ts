@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getCurrentUser, login, requestOTP, verifyOTPAndRegister } from "../controllers/auth.controller";
+import { forgotPassword, getCurrentUser, login, requestOTP, resetPassword, verifyOTPAndRegister } from "../controllers/auth.controller";
 import { errorResponse, successResponse } from "../utils/responseHelper";
 import { authVerify } from "../middleware/middleware";
 
@@ -58,6 +58,25 @@ router.post("/logout", authVerify, async (req, res) => {
     }
 });
 
+router.post("/forgotPassword", async (req, res) => {
+    try {
+        const payload = req.body;
+        const result = await forgotPassword(payload);
+        return successResponse(res, result, "OTP sent successfully");
+    } catch (error) {
+        return errorResponse(res, (error as Error).message);
+    }
+});
+
+router.post("/resetPassword", async (req, res) => {
+    try {
+        const {Mobile_No, otp, newPassword} = req.body;
+        const result = await resetPassword(Mobile_No, otp, newPassword);
+        return successResponse(res, result, "Password reset successfully");
+    } catch (error) {
+        return errorResponse(res, (error as Error).message);
+    }
+});     
 
 
 

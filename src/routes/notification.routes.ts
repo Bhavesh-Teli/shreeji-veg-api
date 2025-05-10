@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { errorResponse, successResponse } from "../utils/responseHelper";
 import { authVerify } from "../middleware/middleware";
-import { getNotification, updateAllUnseenNotifications, updateNotification } from "../controllers/notification.controller";
+import { deleteNotification, deleteAllNotification, getNotification, updateAllUnseenNotifications, updateNotification } from "../controllers/notification.controller";
 import { authorizeAdmin } from "../middleware/middleware";
 
 const router = Router();
@@ -32,5 +32,27 @@ router.put("/updateAllUnseenNotifications", authVerify,authorizeAdmin, async (re
         return errorResponse(res, (error as Error).message);
     }
 });
-
+router.delete("/deleteNotification", authVerify,authorizeAdmin, async (req, res) => {
+    try {
+        const {Ids} = req.body;
+        console.log(req.body);
+        if (!Array.isArray(Ids) || Ids.length === 0) {
+            return errorResponse(res, "Invalid or empty ID array.");
+          }
+        const result = await deleteNotification(Ids);
+        return successResponse(res, result, "Deleted notifications successfully");
+    } catch (error) {
+        console.log(error);
+        return errorResponse(res, (error as Error).message);
+    }
+});
+router.delete("/deleteAllNotification", authVerify,authorizeAdmin, async (req, res) => {
+    try {
+        const result = await deleteAllNotification();
+        return successResponse(res, result, "Deleted notifications successfully");
+    } catch (error) {
+        console.log(error);
+        return errorResponse(res, (error as Error).message);
+    }
+});
 export default router;

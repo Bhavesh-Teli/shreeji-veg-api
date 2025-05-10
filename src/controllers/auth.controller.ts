@@ -98,9 +98,9 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
 };
 
 export const login = async (payload: IUser) => {
-  const { Ac_Name, Book_Pass } = payload;
+  const { Mobile_No, Book_Pass } = payload;
   if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
-  if (Ac_Name === process.env.ADMIN_NAME && Book_Pass === process.env.ADMIN_PASSWORD) {
+  if (Mobile_No === process.env.ADMIN_NAME && Book_Pass === process.env.ADMIN_PASSWORD) {
     const token = jwt.sign({ Ac_Id: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
     return {
       user: { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true },
@@ -111,12 +111,12 @@ export const login = async (payload: IUser) => {
   try {
     const result = await pool
       .request()
-      .input("Ac_Name", Ac_Name)
-      .query(`SELECT Id, Ac_Name, Book_Pass, Ac_Code FROM Ac_Mas WHERE Ac_Name = @Ac_Name`);
+      .input("Mobile_No", Mobile_No)
+      .query(`SELECT Id, Ac_Name, Book_Pass, Ac_Code FROM Ac_Mas WHERE Mobile_No = @Mobile_No`);
 
     const user = result.recordset[0];
 
-    if (!user || user.Book_Pass.trim() !== Book_Pass) throw new Error("Invalid account name or password");
+    if (!user || user.Book_Pass.trim() !== Book_Pass) throw new Error("Invalid mobile number or password");
     if (!user.Ac_Code) throw new Error("Account is not approved by admin");
 
     const token = jwt.sign({ Ac_Id: user.Id }, process.env.JWT_SECRET, { expiresIn: "1d" });
@@ -143,28 +143,41 @@ export const getCurrentUser = async (Ac_Id: string) => {
          Our_Shop_Ac FROM Ac_Mas WHERE Id = @Id`);
   return result.recordset[0];
 }
-
 export const forgotPassword = async (payload: IUser) => {
-    const { Mobile_No } = payload;
-    if (!Mobile_No) throw new Error("Mobile_No is required");
+  const { Mobile_No } = payload;
+  if (!Mobile_No) throw new Error("Mobile_No is required");
 
-    const result = await pool
-        .request()
-        .input("Mobile_No", Mobile_No)
-        .query(`SELECT Id, Ac_Name, Mobile_No FROM Ac_Mas WHERE Mobile_No = @Mobile_No`);
+  const result = await pool
+    .request()
+    .input("Mobile_No", Mobile_No)
+    .query(`SELECT Id, Ac_Name, Mobile_No FROM Ac_Mas WHERE Mobile_No = @Mobile_No`);
 
-    const user = result.recordset[0];
+  const user = result.recordset[0];
 
-    if (!user) throw new Error("User not found");
+  if (!user) throw new Error("User not found");
 
-    const otp = generateOTP();
-    otpStorage.set(Mobile_No, { otp, expiresAt: Date.now() + OTP_EXPIRY });
+  const otp = generateOTP();
+  otpStorage.set(Mobile_No, { otp, expiresAt: Date.now() + OTP_EXPIRY });
 
-    const Message = `Dear ${user.Ac_Name}, \n*${otp}* is your one time password (OTP). Please enter the OTP to proceed.\nThank you,\nTeam Shreeji Veg`;
-    SendWhatsappMessage(Mobile_No, Message);
-    
-
-
-
-    return { message: "OTP sent successfully" };
+  const message = `Dear ${user.Ac_Name}, \n*${otp}* is your OTP to reset your password.\nDo not share this with anyone.\nTeam Shreeji Veg`;
+  SendWhatsappMessage(Mobile_No, message);
+  return { message: "OTP sent successfully" };
 }
+
+export const resetPassword = async (Mobile_No: string, otp: string, newPassword: string) => {
+  if (!Mobile_No || !otp || !newPassword) throw new Error("All fields are required");
+
+  const storedOTP = otpStorage.get(Mobile_No);
+  if (!storedOTP || storedOTP.expiresAt < Date.now()) throw new Error("Expired OTP");
+  if (storedOTP.otp !== otp) throw new Error("Invalid OTP");
+
+  await pool
+    .request()
+    .input("Mobile_No", Mobile_No)
+    .input("Book_Pass", newPassword)
+    .query(`UPDATE Ac_Mas SET Book_Pass = @Book_Pass WHERE Mobile_No = @Mobile_No`);
+
+  otpStorage.delete(Mobile_No);
+
+  return { message: "Password updated successfully" };
+};

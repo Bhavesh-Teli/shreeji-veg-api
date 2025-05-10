@@ -117,7 +117,6 @@ export const addSalePurMain = async (
 
   } catch (error: any) {
     await transaction.rollback();
-    throw error;
   }
 };
 

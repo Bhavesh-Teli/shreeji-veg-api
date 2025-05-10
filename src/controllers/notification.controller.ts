@@ -86,3 +86,31 @@ export const updateAllUnseenNotifications = async () => {
         throw err.message;
     }
 };
+
+export const deleteNotification = async (Ids: any) => {
+    try {
+        const pool = await getDbPool(dbName);
+
+        const idList = Ids.join(","); // Converts [1,2,3] => "1,2,3"
+
+        const result = await pool.request().query(`
+            DELETE FROM [dbo].[Noti_Hist]
+            WHERE Ac_Id IN (${idList})
+        `);
+        return result.recordset;
+    } catch (err: any) {
+        throw err.message;
+    }
+};
+export const deleteAllNotification = async () => {
+    try {
+        const pool = await getDbPool(dbName);
+
+        const result = await pool.request().query(`
+            DELETE FROM [dbo].[Noti_Hist]
+        `);
+        return result.recordset;
+    } catch (err: any) {
+        throw err.message;
+    }
+};
