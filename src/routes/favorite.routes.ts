@@ -28,7 +28,7 @@ router.post("/addToFavorites", authVerify, async (req: Request, res: Response) =
 router.get("/getFavorites", authVerify, async (req: Request, res: Response) => {
   try {
     const payload = {
-      Ac_Id: req.user.Id,
+      Ac_Id: req.query.Id,
       lang: req.query.lang as 'en' | 'hi' | 'gu',
     };
     const result = await getFavorite(payload);

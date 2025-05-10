@@ -8,8 +8,7 @@ const router = Router();
 
 router.post("/getLrNo", authVerify, async (req, res) => {
   try {
-    const { Bill_Date } = req.body;
-    const { Id: Ac_Id } = req.user;
+    const { Bill_Date, Ac_Id } = req.body;
     const Order_Count = await getLrNo(Ac_Id, Bill_Date);
     return successResponse(res, { Order_Count }, "LR No fetched successfully.");
   } catch (error) {
