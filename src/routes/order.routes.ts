@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { errorResponse, successResponse } from "../utils/responseHelper";
 import { authVerify } from "../middleware/middleware";
-import { insertSalePurMain, getOrderData, getLrNo, getBillNo, deleteOrder } from "../controllers/order.controller";
+import { addSalePurMain, editSalePurMain, getOrderData, getLrNo, getBillNo, deleteOrder } from "../controllers/order.controller";
 import { getAllYearRangesFromComMass } from "../utils/dbFunctions";
 
 const router = Router();
@@ -28,16 +28,32 @@ router.get("/getBillNo", authVerify, async (req, res) => {
 
 
 // Route to insert data into Sale_Pur_Main
-router.post("/insertSalePurMain", authVerify, async (req, res) => {
+router.post("/addSalePurMain", authVerify, async (req, res) => {
   try {
-    const { mode, Bill_Date, Order_Count, Bill_No, details } = req.body;
+    const { mode, Bill_Date, Order_Count, details } = req.body;
     const { Id: Ac_Id, Ac_Code, Our_Shop_Ac } = req.user;
 
     // Call the insert function from the controller
-    await insertSalePurMain(mode, Ac_Id, Ac_Code, Order_Count, Bill_No, details, Bill_Date, Our_Shop_Ac);
+    await addSalePurMain(mode, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac);
 
     return successResponse(res, null, "Data inserted successfully into Sale_Pur_Main!");
   } catch (error) {
+    console.log(error);
+    return errorResponse(res, (error as Error).message);
+  }
+});
+
+router.post("/editSalePurMain", authVerify, async (req, res) => {
+  try {
+    const { mode, Bill_Date, Order_Count, Id, details } = req.body;
+    const { Id: Ac_Id, Ac_Code, Our_Shop_Ac } = req.user;
+
+    // Call the insert function from the controller
+    await editSalePurMain(mode,Id, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac);
+
+    return successResponse(res, null, "Data inserted successfully into Sale_Pur_Main!");
+  } catch (error) {
+    console.log(error);
     return errorResponse(res, (error as Error).message);
   }
 });
