@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { errorResponse, successResponse } from "../utils/responseHelper";
 import { authVerify } from "../middleware/middleware";
-import { addSalePurMain, editSalePurMain, getOrderData, getLrNo, deleteOrder } from "../controllers/order.controller";
+import { addSalePurMain, editSalePurMain, getOrderData, getLrNo, deleteOrder, updateFreezeTime, getFreezeTime } from "../controllers/order.controller";
 import { getAllYearRangesFromComMass } from "../utils/dbFunctions";
 
 const router = Router();
@@ -15,6 +15,25 @@ router.post("/getLrNo", authVerify, async (req, res) => {
     return errorResponse(res, (error as Error).message);
   }
 });
+
+router.post("/updateFreezeTime", authVerify, async (req, res) => {
+  try {
+    const { Order_Freez_Time } = req.body;
+    await updateFreezeTime(Order_Freez_Time);
+    return successResponse(res, null, "Freeze time updated successfully.");
+  } catch (error) {
+    return errorResponse(res, (error as Error).message);
+  }
+});
+
+router.get("/getFreezeTime", authVerify, async (req, res) => {
+  try {
+    const freezeTime = await getFreezeTime();
+    return successResponse(res, { freezeTime }, "Freeze time fetched successfully.");
+  } catch (error) {
+    return errorResponse(res, (error as Error).message);
+  }
+}); 
 
 
 // Route to insert data into Sale_Pur_Main

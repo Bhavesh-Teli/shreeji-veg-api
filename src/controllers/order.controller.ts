@@ -13,6 +13,15 @@ const Type = "Purchase Order";
 export const getLrNo = async (Ac_Id: number, Bill_Date: string) =>
   await getCount(pool, "Sale_Pur_Main", `Ac_Id = ${Ac_Id} AND Bill_Date = '${Bill_Date}'`);
 
+export const updateFreezeTime = async (Order_Freez_Time: string) => {
+  await pool.request().input("Order_Freez_Time", sql.Time, Order_Freez_Time).query(`UPDATE Order_Freez_Time SET Order_Freez_Time = @Order_Freez_Time`);
+};
+
+export const getFreezeTime = async () => {
+  const result = await pool.request().query(`SELECT Order_Freez_Time FROM Order_Freez_Time`);
+  return result.recordset[0].Order_Freez_Time;
+};
+
 export const addSalePurMain = async (
   mode: "add" | "edit",
   Ac_Id: number,
@@ -183,7 +192,6 @@ interface SalePurDetailRow {
   Uni_ID: number;
   Itm_Name: string;
 }
-
 
 export const insertSalePurDetail = async (
   transaction: sql.Transaction,
@@ -408,3 +416,4 @@ export const deleteOrder = async (Bill_No: number) => {
     throw new Error(error.message || "Something went wrong while deleting the order.");
   }
 };
+
