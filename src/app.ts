@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import http from "http";
 import registerRoutes from "./routes/index";
 import { connectDB } from "./config/dbConfig";
+import compression from "compression";
 
 
 dotenv.config();
@@ -35,7 +36,7 @@ app.options('*', cors()); // Preflight support
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
-
+app.use(compression());
 registerRoutes(app);
 
 io.on("connection", (socket) => {

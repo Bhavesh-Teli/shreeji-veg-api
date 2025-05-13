@@ -46,21 +46,16 @@ router.post("/addSalePurMain", authVerify, async (req, res) => {
     await addSalePurMain(mode, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac);
     return successResponse(res, null, "Data inserted successfully into Sale_Pur_Main!");
   } catch (error) {
-    console.log(error);
     return errorResponse(res, (error as Error).message);
   }
 });
 
 router.post("/editSalePurMain", authVerify, async (req, res) => {
   try {
-    const { mode, Bill_Date, Order_Count, Id, details } = req.body;
-    const { Id: Ac_Id, Ac_Code, Our_Shop_Ac } = req.user;
-
-    // Call the insert function from the controller
-    await editSalePurMain(mode,Id, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac);
+    const { mode, Bill_Date, Order_Count, Id, details, Ac_Id, Ac_Code, Our_Shop_Ac } = req.body;
+    await editSalePurMain(mode, Id, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac);
     return successResponse(res, null, "Data inserted successfully into Sale_Pur_Main!");
   } catch (error) {
-    console.log(error);
     return errorResponse(res, (error as Error).message);
   }
 });

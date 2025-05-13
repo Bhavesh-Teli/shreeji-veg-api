@@ -67,5 +67,3 @@ export const getUserList = async () => {
   }
 }
 
-export const getTime=()=>{
-} 

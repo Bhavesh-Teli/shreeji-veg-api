@@ -14,12 +14,23 @@ export const getLrNo = async (Ac_Id: number, Bill_Date: string) =>
   await getCount(pool, "Sale_Pur_Main", `Ac_Id = ${Ac_Id} AND Bill_Date = '${Bill_Date}'`);
 
 export const updateFreezeTime = async (Order_Freez_Time: string) => {
-  await pool.request().input("Order_Freez_Time", sql.Time, Order_Freez_Time).query(`UPDATE Order_Freez_Time SET Order_Freez_Time = @Order_Freez_Time`);
+  await pool.request().input("Order_Freez_Time", Order_Freez_Time).query(`UPDATE Order_Freez_Time SET Order_Freez_Time = @Order_Freez_Time`);
 };
 
 export const getFreezeTime = async () => {
   const result = await pool.request().query(`SELECT Order_Freez_Time FROM Order_Freez_Time`);
-  return result.recordset[0].Order_Freez_Time;
+  // return result.recordset[0].Order_Freez_Time;
+  if (result.recordset.length === 0) {
+    throw new Error("No freeze time found in the database.");
+  }
+
+  // Extract only the time part (HH:mm:ss)
+  const freezeTime = result.recordset[0].Order_Freez_Time;
+
+  // Format the time to HH:mm:ss without date (for simplicity)
+  const formattedTime = freezeTime.toISOString().split('T')[1].split('.')[0]; // "16:00:00"
+
+  return formattedTime;
 };
 
 export const addSalePurMain = async (
@@ -317,8 +328,8 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
 
     const optimizedQuery = `
       SELECT 
-        M.Bill_No, M.Bill_Date, M.LR_No, M.Id,
-        A.Ac_Name, A.Ac_Code,
+        M.Bill_No, M.Bill_Date, M.LR_No, M.Id, M.Ac_Id,
+        A.Ac_Name, A.Ac_Code, A.Our_Shop_Ac,
         D.SrNo, D.Itm_Id, I.Itm_Name, 
         D.Qty, D.Uni_ID, U.Uni_Name, IG.IGP_NAME
       FROM Sale_Pur_Main M
@@ -355,6 +366,8 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
           Id: row.Id,
           Ac_Code: row.Ac_Code,
           Ac_Name: row.Ac_Name,
+          Ac_Id: row.Ac_Id,
+          Our_Shop_Ac: row.Our_Shop_Ac,
           Bill_No: row.Bill_No,
           Bill_Date: row.Bill_Date,
           Order_Count: row.LR_No,

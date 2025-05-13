@@ -26,7 +26,7 @@ export const baseDbConfig = {
   options: {
     encrypt: false, // Set true if using Azure
     trustServerCertificate: true,
-    requestTimeout: 30000
+    requestTimeout: 60000
   },
 };
 
