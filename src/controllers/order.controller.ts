@@ -393,7 +393,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
   }
 };
 
-export const deleteOrder = async (Bill_No: number) => {
+export const deleteOrder = async (Bill_No: number, Ac_Id: number) => {
   const transaction = pool.transaction();
 
   try {
@@ -415,6 +415,14 @@ export const deleteOrder = async (Bill_No: number) => {
     if (mainResult.rowsAffected[0] === 0) {
       throw new Error("Order not found");
     }
+    const Ac_Name = (await pool.request().input("Ac_Id", sql.Int, Ac_Id).query(`SELECT Ac_Name FROM Ac_Mas WHERE Id = @Ac_Id`)).recordset[0].Ac_Name;
+    await sendNotification({
+      noti: `${Ac_Name} has deleted Order ${Bill_No}`,
+      cat: "Order",
+      userType: "User",
+      Ac_Id: Ac_Id,
+    });
+
 
     await transaction.commit();
 

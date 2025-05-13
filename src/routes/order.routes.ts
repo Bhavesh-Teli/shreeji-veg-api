@@ -74,8 +74,8 @@ router.get("/OrderData", authVerify, async (req, res) => {
 
 router.delete("/deleteOrder", authVerify, async (req, res) => {
   try {
-    const { Bill_No } = req.body;
-    const result = await deleteOrder(Bill_No);
+    const { Bill_No, Ac_Id } = req.body;
+    const result = await deleteOrder(Bill_No,Ac_Id);
     return successResponse(res, result, "Order deleted successfully.");
   } catch (error) {
     return errorResponse(res, (error as Error).message);
