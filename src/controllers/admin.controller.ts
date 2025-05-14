@@ -57,7 +57,7 @@ export const getUserList = async () => {
     const query = `
       SELECT Id, Ac_Name, Mobile_No, Ac_Code,Book_Pass,Our_Shop_Ac
       FROM Ac_Mas 
-      WHERE Id != 0`;
+      WHERE Id != 0 AND Grp_Id = 10`;
 
     const result = await pool.request().query(query);
 

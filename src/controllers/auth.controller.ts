@@ -15,7 +15,7 @@ export const requestOTP = async (mobileNo: string, Ac_Name: string) => {
   const otp = generateOTP();
   otpStorage.set(mobileNo, { otp, expiresAt: Date.now() + OTP_EXPIRY });
 
-  const Message = `Dear ${Ac_Name}, \n*${otp}* is your one time password (OTP). Please enter the OTP to proceed.\nThank you,\nTeam Shreeji Veg`;
+  const Message = `Dear ${Ac_Name}, \n*${otp}* is your one time password (OTP). Please enter the OTP to proceed.\nThank you,\n*Team Shreeji Veg*`;
   SendWhatsappMessage(mobileNo, Message);
 
   return { message: "OTP sent successfully" };
@@ -27,12 +27,15 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
   if (!Ac_Name || !Mobile_No || !Book_Pass || !enteredOTP) throw new Error("All fields including OTP are required");
 
   const storedOTP = otpStorage.get(Mobile_No);
-  if (!storedOTP || storedOTP.expiresAt < Date.now()) throw new Error("Expired OTP");
+  if (!storedOTP || storedOTP.expiresAt < Date.now()) {
+    otpStorage.delete(Mobile_No);
+    throw new Error("Expired OTP");
+  }
   if (storedOTP.otp !== enteredOTP) throw new Error("Invalid OTP");
 
 
   // Begin transaction for user registration
-  const transaction = pool.transaction();
+  const transaction = await pool.transaction();
   await transaction.begin();
 
   try {
@@ -54,6 +57,8 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
       .input("Ac_Name", Ac_Name)
       .input("Mobile_No", Mobile_No)
       .input("Book_Pass", Book_Pass)
+      .input("City_Id", "")
+      .input("Grp_Id", 10)
       .input("Main_Grp_Id", 7)
       .input("Sub_Grp_Id", 3)
       .input("Defa", 0)
@@ -66,11 +71,11 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
       .input("Our_Shop_Ac", 0).query(`
       INSERT INTO Ac_Mas (
         Id, Ac_Name, Mobile_No, Book_Pass,
-        Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
+        City_Id, Grp_Id, Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
         State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac
       ) VALUES (
         @Id, @Ac_Name, @Mobile_No, @Book_Pass,
-        @Main_Grp_Id, @Sub_Grp_Id, @Defa, @Cancel_Bill_Ac,
+        @City_Id, @Grp_Id, @Main_Grp_Id, @Sub_Grp_Id, @Defa, @Cancel_Bill_Ac,
         @State_Name1, @State_Code, @Party_Type, @Active, @Cash_Party, @Our_Shop_Ac
       )
     `);
@@ -82,18 +87,21 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
       userType: "User",
       Ac_Id: newId,
     });
+
+
     await transaction.commit();
-    const welcomeMessage = `*Welcome to Shreeji Veg App*, Dear ${Ac_Name},\n\nYou have successfully created your account.\n\n*Username:* ${Mobile_No}\n*Password:* ${Book_Pass}\n\nPlease wait for login — your account is pending admin approval. You will receive a confirmation message once your account is activated.\n\nThank you,\n*Team Shreeji Veg *`;
-
+    const welcomeMessage = `*Welcome to Shreeji Veg App*,\n\nDear ${Ac_Name},\nYou have successfully created your account.\n\n*Username:* ${Mobile_No}\n*Password:* ${Book_Pass}\n\nPlease wait for login — your account is pending admin approval. You will receive a confirmation message once your account is activated.\n\nThank you,\n*Team Shreeji Veg*`;
     SendWhatsappMessage(Mobile_No, welcomeMessage);
-
+    const messageToAdmin = `🟢 *New User Registered* 🟢\n\n👤 *Name:* ${Ac_Name}\n📱 *Mobile:* ${Mobile_No}\n📍 *Status:* Pending Approval\n\nPlease review and approve if valid.\n*Team Shreeji Veg*`;
+    SendWhatsappMessage(process.env.ADMIN_MOBILE_NO!, messageToAdmin);
+    
     otpStorage.delete(Mobile_No);
 
     const { Book_Pass: _, ...userWithoutPassword } = payload;
     return { message: "User registered successfully", user: userWithoutPassword };
-  } catch (error: any) {
+  } catch (error) {
     await transaction.rollback();
-    throw new Error(error.message || "User registration failed");
+    throw new Error((error as Error).message || "User registration failed");
   }
 };
 
@@ -159,7 +167,7 @@ export const forgotPassword = async (payload: IUser) => {
   const otp = generateOTP();
   otpStorage.set(Mobile_No, { otp, expiresAt: Date.now() + OTP_EXPIRY });
 
-  const message = `Dear ${user.Ac_Name}, \n*${otp}* is your OTP to reset your password.\nDo not share this with anyone.\nTeam Shreeji Veg`;
+  const message = `Dear ${user.Ac_Name}, \n*${otp}* is your OTP to reset your password.\nDo not share this with anyone.\n*Team Shreeji Veg*`;
   SendWhatsappMessage(Mobile_No, message);
   return { message: "OTP sent successfully" };
 }
