@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { errorResponse, successResponse } from "../utils/responseHelper";
-import { addFavorite, getAllItem, getFavorite, removeFavorite } from "../controllers/favorite.controller";
+import { addFavorite, getAllItem, getFavorite, removeFavorite, updateFavoriteSortIndex } from "../controllers/favorite.controller";
 import { authVerify } from "../middleware/middleware";
 
 const router = Router();
@@ -21,6 +21,18 @@ router.post("/addToFavorites", authVerify, async (req: Request, res: Response) =
     };
     const result = await addFavorite(payload);
     return successResponse(res, result, "Successfully add to favorite");
+  } catch (error) {
+    return errorResponse(res, (error as Error).message);
+  }
+});
+router.post("/updateFavoriteSortIndex", authVerify, async (req: Request, res: Response) => {
+  try {
+    const payload = {
+      Ac_Id: req.user.Id,
+      ...req.body,
+    };
+    const result = await updateFavoriteSortIndex(payload);
+    return successResponse(res, result, "Successfully updated favorite sort index");
   } catch (error) {
     return errorResponse(res, (error as Error).message);
   }

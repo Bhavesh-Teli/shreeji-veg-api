@@ -24,7 +24,7 @@ export const getAllItem = async (lang: 'en' | 'hi' | 'gu') => {
 };
 
 export const addFavorite = async (payload: any) => {
-  const { Ac_Id, Itm_Id,Sort_Index } = payload;
+  const { Ac_Id, Itm_Id } = payload;
 
   const existingFavorite = await pool
     .request()
@@ -40,8 +40,18 @@ export const addFavorite = async (payload: any) => {
     .request()
     .input("Ac_Id", Ac_Id)
     .input("Itm_Id", Itm_Id)
+    .query(`INSERT INTO [Itm_User_Fav] (Ac_Id, Itm_Id) VALUES (@Ac_Id, @Itm_Id)`);
+};
+
+export const updateFavoriteSortIndex = async (payload: any) => {
+  const { Ac_Id, Itm_Id, Sort_Index } = payload;
+
+  await pool
+    .request()
+    .input("Ac_Id", Ac_Id)
+    .input("Itm_Id", Itm_Id)
     .input("Sort_Index", Sort_Index)
-    .query(`INSERT INTO [Itm_User_Fav] (Ac_Id, Itm_Id,Sort_Index) VALUES (@Ac_Id, @Itm_Id,@Sort_Index)`);
+    .query(`UPDATE [Itm_User_Fav] SET Sort_Index = @Sort_Index WHERE Ac_Id = @Ac_Id AND Itm_Id = @Itm_Id`);
 };
 
 export const getFavorite = async (payload: any) => {
@@ -72,6 +82,7 @@ export const getFavorite = async (payload: any) => {
       JOIN [Uni_Mas] UM ON IM.Uni_ID = UM.Uni_ID
       JOIN [Itm_Grp] IG ON IM.IGP_ID = IG.IGP_ID
       WHERE UF.Ac_Id = @Ac_Id
+      ORDER BY UF.Sort_Index ASC
     `);
 
   return favorites.recordset;
