@@ -58,12 +58,12 @@ export const getFavorite = async (payload: any) => {
     .input("Ac_Id", Ac_Id)
     .query(`
         SELECT 
-     --   UF.Id, 
+        UF.Id, 
         UF.Ac_Id, 
-       -- UF.Itm_Id,
+        UF.Itm_Id,
         IM.Itm_Code, 
         ${itemNameColumn} AS Itm_Name, 
-      --  IM.Uni_ID,
+        IM.Uni_ID,
         UM.Uni_Name,
         IG.IGP_NAME,
         UF.Sort_Index
