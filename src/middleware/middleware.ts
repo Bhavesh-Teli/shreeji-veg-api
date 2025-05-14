@@ -27,7 +27,7 @@ export const authVerify = async (req: Request, res: Response, next: NextFunction
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
 
     if (decodedToken.Ac_Id === "admin") {
-      req.user = { Id: "admin", Ac_Name: process.env.ADMIN_NAME!, isAdmin: true };
+      req.user = { Id: "admin", Ac_Name: process.env.ADMIN_NAME!,Mobile_No: process.env.ADMIN_MOBILE_NO!, isAdmin: true };
       return next();
     }
 

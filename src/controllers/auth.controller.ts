@@ -108,7 +108,7 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
 export const login = async (payload: IUser) => {
   const { Mobile_No, Book_Pass } = payload;
   if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
-  if (Mobile_No === process.env.ADMIN_NAME && Book_Pass === process.env.ADMIN_PASSWORD) {
+  if (Mobile_No === process.env.ADMIN_MOBILE_NO && Book_Pass === process.env.ADMIN_PASSWORD) {
     const token = jwt.sign({ Ac_Id: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
     return {
       user: { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true },
