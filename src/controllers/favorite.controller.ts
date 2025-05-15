@@ -97,7 +97,6 @@ export const getFavorite = async (payload: any) => {
       WHERE UF.Ac_Id = @Ac_Id
       ORDER BY UF.Sort_Index ASC
     `);
-  console.log(favorites.recordset);
   return favorites.recordset;
 };
 

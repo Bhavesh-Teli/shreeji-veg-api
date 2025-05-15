@@ -14,7 +14,7 @@ export const getLrNo = async (Ac_Id: number, Bill_Date: string) =>
   await getCount(pool, "Sale_Pur_Main", `Ac_Id = ${Ac_Id} AND Bill_Date = '${Bill_Date}'`);
 
 export const updateFreezeTime = async (Order_Freez_Time: string) => {
-  await pool.request().input("Order_Freez_Time", Order_Freez_Time).query(`UPDATE Order_Freez_Time SET Order_Freez_Time = @Order_Freez_Time`);
+  await pool.request().input("Order_Freez_Time", Order_Freez_Time).query(`UPDATE SoftSet1 SET Order_Freez_Time = @Order_Freez_Time`);
 };
 
 export const getUnit = async () => {
@@ -22,7 +22,7 @@ export const getUnit = async () => {
   return result.recordset;
 }
 export const getFreezeTime = async () => {
-  const result = await pool.request().query(`SELECT Order_Freez_Time FROM Order_Freez_Time`);
+  const result = await pool.request().query(`SELECT Order_Freez_Time FROM SoftSet1`);
   // return result.recordset[0].Order_Freez_Time;
   if (result.recordset.length === 0) {
     throw new Error("No freeze time found in the database.");
@@ -375,7 +375,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
       LEFT JOIN Itm_Grp IG ON I.IGP_ID = IG.IGP_ID
       WHERE M.Bill_Date BETWEEN @FromDate AND @ToDate
       ${!isAdmin ? "AND M.Ac_Id = @Ac_Id" : ""}
-      ORDER BY M.Bill_No, D.SrNo
+      ORDER BY M.Bill_No DESC, D.SrNo
     `;
 
     const request = pool.request()
