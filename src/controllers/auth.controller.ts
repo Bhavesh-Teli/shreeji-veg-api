@@ -92,7 +92,7 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
     await transaction.commit();
     const welcomeMessage = `*Welcome to Shreeji Veg App*,\n\nDear ${Ac_Name},\nYou have successfully created your account.\n\n*Username:* ${Mobile_No}\n*Password:* ${Book_Pass}\n\nPlease wait for login — your account is pending admin approval. You will receive a confirmation message once your account is activated.\n\nThank you,\n*Team Shreeji Veg*`;
     SendWhatsappMessage(Mobile_No, welcomeMessage);
-    const messageToAdmin = `🟢 *New User Registered* 🟢\n\n👤 *Name:* ${Ac_Name}\n📱 *Mobile:* ${Mobile_No}\n📍 *Status:* Pending Approval\n\nPlease review and approve if valid.\n*Team Shreeji Veg*`;
+    const messageToAdmin = `🟢 *New User Registered* 🟢\n\n👤 *Name:* ${Ac_Name}\n📱 *Mobile:* ${Mobile_No}\n📍 *Status:* Pending Approval\n🔗 *Approve User:* https://shreeji-veg-js.vercel.app/user/approve\n\nPlease review and approve if valid.\n*Team Shreeji Veg*`;
     SendWhatsappMessage(process.env.ADMIN_MOBILE_NO!, messageToAdmin);
     
     otpStorage.delete(Mobile_No);

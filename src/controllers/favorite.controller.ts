@@ -2,26 +2,34 @@ import { pool } from "../config/dbConfig";
 
 export const getAllItem = async (lang: 'en' | 'hi' | 'gu') => {
   let itemNameColumn = 'Itm_Mas.Itm_Name';
+  let itmNameEnColumn = '';
+
   if (lang === 'hi') {
     itemNameColumn = 'Itm_Mas.Part_Name';
+    itmNameEnColumn = ', Itm_Mas.Itm_Name AS Itm_Name_en';
   } else if (lang === 'gu') {
     itemNameColumn = 'Itm_Mas.Ex_Location';
+    itmNameEnColumn = ', Itm_Mas.Itm_Name AS Itm_Name_en';
   }
-  const existingItems = await pool
-    .request()
-    .query(`SELECT 
-            Itm_Mas.Itm_ID,
-            ${itemNameColumn} AS Itm_Name,
-            Itm_Mas.Sale_Rate,
-            Itm_Mas.Uni_ID,
-            Uni_Mas.Uni_Name,
-            Itm_Grp.IGP_NAME
-            FROM Itm_Mas
-            JOIN Uni_Mas ON Itm_Mas.Uni_ID = Uni_Mas.Uni_ID
-            JOIN Itm_Grp ON Itm_Mas.IGP_ID = Itm_Grp.IGP_ID
-`);
-  return existingItems.recordset;
+
+  const query = `
+    SELECT 
+      Itm_Mas.Itm_ID,
+      ${itemNameColumn} AS Itm_Name
+      ${itmNameEnColumn} ,
+      Itm_Mas.Sale_Rate,
+      Itm_Mas.Uni_ID,
+      Uni_Mas.Uni_Name,
+      Itm_Grp.IGP_NAME
+    FROM Itm_Mas
+    JOIN Uni_Mas ON Itm_Mas.Uni_ID = Uni_Mas.Uni_ID
+    JOIN Itm_Grp ON Itm_Mas.IGP_ID = Itm_Grp.IGP_ID
+  `;
+
+  const result = await pool.request().query(query);
+  return result.recordset;
 };
+
 
 export const addFavorite = async (payload: any) => {
   const { Ac_Id, Itm_Id } = payload;
@@ -57,10 +65,14 @@ export const updateFavoriteSortIndex = async (payload: any) => {
 export const getFavorite = async (payload: any) => {
   const { Ac_Id, lang } = payload;
   let itemNameColumn = 'IM.Itm_Name';
+  let itmNameEnColumn = '';
+
   if (lang === 'hi') {
     itemNameColumn = 'IM.Part_Name';
+    itmNameEnColumn = ', IM.Itm_Name AS Itm_Name_en';
   } else if (lang === 'gu') {
     itemNameColumn = 'IM.Ex_Location';
+    itmNameEnColumn = ', IM.Itm_Name AS Itm_Name_en';
   }
 
   const favorites = await pool
@@ -72,7 +84,8 @@ export const getFavorite = async (payload: any) => {
         UF.Ac_Id, 
         UF.Itm_Id,
         IM.Itm_Code, 
-        ${itemNameColumn} AS Itm_Name, 
+        ${itemNameColumn} AS Itm_Name
+        ${itmNameEnColumn},
         IM.Uni_ID,
         UM.Uni_Name,
         IG.IGP_NAME,
@@ -84,7 +97,7 @@ export const getFavorite = async (payload: any) => {
       WHERE UF.Ac_Id = @Ac_Id
       ORDER BY UF.Sort_Index ASC
     `);
-
+  console.log(favorites.recordset);
   return favorites.recordset;
 };
 
