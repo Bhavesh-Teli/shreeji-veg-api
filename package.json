@@ -6,7 +6,9 @@
     "build": "esbuild src/app.ts --bundle --platform=node --target=node20  --outfile=dist/app.js --loader:.html=text --packages=external",
     "start": "node dist/app.js",
     "dev": "npm run build && npm run start",
-    "watch": "nodemon --ext ts,html --exec \"npm run build && npm run start\""
+    "watch": "nodemon --ext ts,html --exec \"npm run build && npm run start\"",
+    "pm2-start": "npm run build && pm2 start dist/app.js --name shreeji-veg-api --update-env && pm2 save",
+    "pm2-stop": "pm2 stop shreeji-veg-api && pm2 save"
   },
   "keywords": [],
   "author": "",
