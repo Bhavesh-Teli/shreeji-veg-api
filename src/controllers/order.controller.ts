@@ -17,6 +17,10 @@ export const updateFreezeTime = async (Order_Freez_Time: string) => {
   await pool.request().input("Order_Freez_Time", Order_Freez_Time).query(`UPDATE Order_Freez_Time SET Order_Freez_Time = @Order_Freez_Time`);
 };
 
+export const getUnit = async () => {
+  const result = await pool.request().query(`SELECT MIN(Uni_ID) as Uni_ID,Uni_Name FROM Uni_Mas WHERE Uni_ID <> 0 group by Uni_Name`);
+  return result.recordset;
+}
 export const getFreezeTime = async () => {
   const result = await pool.request().query(`SELECT Order_Freez_Time FROM Order_Freez_Time`);
   // return result.recordset[0].Order_Freez_Time;
@@ -252,12 +256,32 @@ export const insertSalePurDetail = async (
 
       let dNo = "";
       if (Inward !== 0) {
-        const qtyFormatted = Inward.toFixed(3);
-        dNo =
-          typeof Uni_Name === "string" && Uni_Name.toUpperCase() === "PCS"
-            ? `${parseFloat(qtyFormatted)} Pcs`
-            : `${parseFloat(qtyFormatted)} ${Inward <= 0.999 ? "Gm" : "Kg"}`;
+        let mQty_Format = "###0";
+        const mQty_1 = Inward.toFixed(3);
+        const decimalPart = parseFloat(mQty_1) % 1;
+
+        if (decimalPart > 0) {
+          mQty_Format = "###0.000";
+        }
+
+        const formattedQty = mQty_Format === "###0.000" ? Inward.toFixed(3) : Inward.toFixed(0);
+
+        if (typeof Uni_Name === "string") {
+          const unit = Uni_Name.trim().toUpperCase();
+          switch (unit) {
+            case "PCS":
+              dNo = `${formattedQty} Pcs`;
+              break;
+            case "BOX":
+              dNo = `${formattedQty} Box`;
+              break;
+            default:
+              dNo = `${formattedQty} ${Inward <= 0.999 ? "Gm" : "Kg"}`;
+              break;
+          }
+        }
       }
+
 
       const insertQuery = `
               INSERT INTO Sale_Pur_Detail (
@@ -328,10 +352,21 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
 
     const optimizedQuery = `
       SELECT 
-        M.Bill_No, M.Bill_Date, M.LR_No, M.Id, M.Ac_Id,
-        A.Ac_Name, A.Ac_Code, A.Our_Shop_Ac,
-        D.SrNo, D.Itm_Id, I.Itm_Name, 
-        D.Qty, D.Uni_ID, U.Uni_Name, IG.IGP_NAME
+        M.Bill_No,
+        M.Bill_Date,
+        M.LR_No,
+        M.Id,
+        M.Ac_Id,
+        A.Ac_Name,
+        A.Ac_Code,
+        A.Our_Shop_Ac,
+        D.SrNo,
+        D.Itm_Id,
+        I.Itm_Name,
+        D.Qty,
+        D.Uni_ID,
+        U.Uni_Name,
+        IG.IGP_NAME
       FROM Sale_Pur_Main M
       JOIN Ac_Mas A ON M.Ac_Id = A.Id
       JOIN Sale_Pur_Detail D ON M.Bill_No = D.Bill_No
@@ -416,7 +451,7 @@ export const deleteOrder = async (Bill_No: number, Ac_Name: string) => {
     if (mainResult.rowsAffected[0] === 0) {
       throw new Error("Order not found");
     }
-    
+
     await sendNotification({
       noti: `${Ac_Name} has deleted Order ${Bill_No}`,
       cat: "Order",

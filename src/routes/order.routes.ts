@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { errorResponse, successResponse } from "../utils/responseHelper";
 import { authVerify } from "../middleware/middleware";
-import { addSalePurMain, editSalePurMain, getOrderData, getLrNo, deleteOrder, updateFreezeTime, getFreezeTime } from "../controllers/order.controller";
+import { addSalePurMain, editSalePurMain, getOrderData, getLrNo, deleteOrder, updateFreezeTime, getFreezeTime, getUnit } from "../controllers/order.controller";
 import { getAllYearRangesFromComMass } from "../utils/dbFunctions";
 
 const router = Router();
@@ -35,6 +35,14 @@ router.get("/getFreezeTime", authVerify, async (req, res) => {
   }
 }); 
 
+router.get("/getUnit", authVerify, async (req, res) => {
+  try {
+    const result = await getUnit();
+    return successResponse(res, result, "Unique unit fetched successfully.");
+  } catch (error) {
+    return errorResponse(res, (error as Error).message);
+  }
+});
 
 // Route to insert data into Sale_Pur_Main
 router.post("/addSalePurMain", authVerify, async (req, res) => {
