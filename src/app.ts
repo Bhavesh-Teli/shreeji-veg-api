@@ -8,7 +8,7 @@ import http from "http";
 import registerRoutes from "./routes/index";
 import { connectDB } from "./config/dbConfig";
 import compression from "compression";
-
+import path from "path";
 
 dotenv.config();
 const ALLOWED_ORIGINS = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : [];
@@ -23,7 +23,6 @@ export const io = new Server(server, {
   },
 });
 
-
 app.use(
   cors({
     origin: ALLOWED_ORIGINS,
@@ -33,11 +32,20 @@ app.use(
 
 app.options('*', cors()); // Preflight support
 
+app.get('/api/healthcheck', (req, res) => {
+  res.json({ status: 'Backend is running' });
+});
+
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(compression());
 registerRoutes(app);
+
+app.use(express.static(path.join(__dirname, "../../shreeji-veg-js/dist")));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../../shreeji-veg-js/dist/index.html"));
+});
 
 io.on("connection", (socket) => {
   socket.on("disconnect", () => {
@@ -46,10 +54,10 @@ io.on("connection", (socket) => {
 });
 
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 connectDB()
   .then(() => {
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on Port ${PORT}`);
     });
   })
