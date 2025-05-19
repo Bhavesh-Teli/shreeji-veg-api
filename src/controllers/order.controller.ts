@@ -56,6 +56,7 @@ export const addSalePurMain = async (
     const Bill_No = await autoNumber(pool, "Sale_Pur_Main", "Bill_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId} AND Branch_Id = ${branchId}`);
     const fullBillNo = `${Bill_No}`;
     const billType = `${Ac_Code}-${Order_Count}`;
+    console.log(billType)
 
     const [id, typeId, bookVNo, vNo] = await Promise.all([
       autoNumber(pool, "Sale_Pur_Main", "Id", "Type <> 'Purchase Old' AND Type <> 'Sale Old'"),

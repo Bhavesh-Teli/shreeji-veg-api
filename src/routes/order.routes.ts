@@ -48,9 +48,6 @@ router.get("/getUnit", authVerify, async (req, res) => {
 router.post("/addSalePurMain", authVerify, async (req, res) => {
   try {
     const { mode, Bill_Date, Order_Count, details , Ac_Id, Ac_Code, Our_Shop_Ac} = req.body;
-    // const { Id: Ac_Id, Ac_Code, Our_Shop_Ac } = req.user;
-
-    // Call the insert function from the controller
     await addSalePurMain(mode, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac);
     return successResponse(res, null, "Data inserted successfully into Sale_Pur_Main!");
   } catch (error) {

@@ -35,7 +35,6 @@ router.put("/updateAllUnseenNotifications", authVerify,authorizeAdmin, async (re
 router.delete("/deleteNotification", authVerify,authorizeAdmin, async (req, res) => {
     try {
         const {Ids} = req.body;
-        console.log(req.body);
         if (!Array.isArray(Ids) || Ids.length === 0) {
             return errorResponse(res, "Invalid or empty ID array.");
           }

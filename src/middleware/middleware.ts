@@ -25,12 +25,18 @@ export const authVerify = async (req: Request, res: Response, next: NextFunction
     }
 
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+    const adminList = JSON.parse(process.env.ADMIN_USERS!);
 
-    if (decodedToken.Ac_Id === "admin") {
-      req.user = { Id: "admin", Ac_Name: process.env.ADMIN_NAME!,Mobile_No: process.env.ADMIN_MOBILE_NO!, isAdmin: true };
+    const matchedAdmin = adminList.find((admin: any) => admin.Id === decodedToken.Ac_Id);
+    if (matchedAdmin) {
+      req.user = {
+        Id: matchedAdmin.Id,
+        Ac_Name: matchedAdmin.ADMIN_NAME,
+        Mobile_No: matchedAdmin.ADMIN_MOBILE_NO,
+        isAdmin: true,
+      };
       return next();
     }
-
     const result = await pool.request().input("Ac_Id", sql.Int, decodedToken.Ac_Id).query("SELECT * FROM Ac_Mas WHERE Id = @Ac_Id");
 
     if (result.recordset.length === 0) {

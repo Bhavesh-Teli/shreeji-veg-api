@@ -12,6 +12,27 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 
 export const requestOTP = async (mobileNo: string, Ac_Name: string) => {
   if (!mobileNo) throw new Error("Mobile number is required");
+  if (!Ac_Name) throw new Error("Account name is required");
+
+  const mobileExists = await pool
+    .request()
+    .input("Mobile_No", mobileNo)
+    .query(`SELECT 1 FROM Ac_Mas WHERE Mobile_No = @Mobile_No`);
+
+  if (mobileExists.recordset.length > 0) {
+    throw new Error("Mobile number is already registered");
+  }
+
+  // Check if Ac_Name exists
+  const nameExists = await pool
+    .request()
+    .input("Ac_Name", Ac_Name)
+    .query(`SELECT 1 FROM Ac_Mas WHERE Ac_Name = @Ac_Name`);
+
+  if (nameExists.recordset.length > 0) {
+    throw new Error("Account name is already taken");
+  }
+
   const otp = generateOTP();
   otpStorage.set(mobileNo, { otp, expiresAt: Date.now() + OTP_EXPIRY });
 
@@ -57,7 +78,8 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
       .input("Ac_Name", Ac_Name)
       .input("Mobile_No", Mobile_No)
       .input("Book_Pass", Book_Pass)
-      .input("City_Id", "")
+      .input("Area_Id", 0)
+      .input("City_Id", 1)
       .input("Grp_Id", 10)
       .input("Main_Grp_Id", 7)
       .input("Sub_Grp_Id", 3)
@@ -71,11 +93,11 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
       .input("Our_Shop_Ac", 0).query(`
       INSERT INTO Ac_Mas (
         Id, Ac_Name, Mobile_No, Book_Pass,
-        City_Id, Grp_Id, Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
+        Area_Id, City_Id, Grp_Id, Main_Grp_Id, Sub_Grp_Id, Defa, Cancel_Bill_Ac,
         State_Name1, State_Code, Party_Type, Active, Cash_Party, Our_Shop_Ac
       ) VALUES (
         @Id, @Ac_Name, @Mobile_No, @Book_Pass,
-        @City_Id, @Grp_Id, @Main_Grp_Id, @Sub_Grp_Id, @Defa, @Cancel_Bill_Ac,
+        @Area_Id, @City_Id, @Grp_Id, @Main_Grp_Id, @Sub_Grp_Id, @Defa, @Cancel_Bill_Ac,
         @State_Name1, @State_Code, @Party_Type, @Active, @Cash_Party, @Our_Shop_Ac
       )
     `);
@@ -92,9 +114,11 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
     await transaction.commit();
     const welcomeMessage = `*Welcome to Shreeji Veg App*,\n\nDear ${Ac_Name},\nYou have successfully created your account.\n\n*Username:* ${Mobile_No}\n*Password:* ${Book_Pass}\n\nPlease wait for login — your account is pending admin approval. You will receive a confirmation message once your account is activated.\n\nThank you,\n*Team Shreeji Veg*`;
     SendWhatsappMessage(Mobile_No, welcomeMessage);
-    const messageToAdmin = `🟢 *New User Registered* 🟢\n\n👤 *Name:* ${Ac_Name}\n📱 *Mobile:* ${Mobile_No}\n📍 *Status:* Pending Approval\n🔗 *Approve User:* https://shreeji-veg-js.vercel.app/user/approve\n\nPlease review and approve if valid.\n*Team Shreeji Veg*`;
-    SendWhatsappMessage(process.env.ADMIN_MOBILE_NO!, messageToAdmin);
-    
+    const messageToAdmin = `🟢 *New User Registered* 🟢\n\n👤 *Name:* ${Ac_Name}\n📱 *Mobile:* ${Mobile_No}\n📍 *Status:* Pending Approval\n🔗 Approve User: ${process.env.APPROVR_URL}\n\nPlease review and approve if valid.\n*Team Shreeji Veg*`;
+
+    const adminUsers = JSON.parse(process.env.ADMIN_USERS!);
+    const admin2 = adminUsers.find((admin: any) => admin.Id === "admin2")!;
+    SendWhatsappMessage(admin2.ADMIN_MOBILE_NO, messageToAdmin);
     otpStorage.delete(Mobile_No);
 
     const { Book_Pass: _, ...userWithoutPassword } = payload;
@@ -108,10 +132,16 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
 export const login = async (payload: IUser) => {
   const { Mobile_No, Book_Pass } = payload;
   if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
-  if (Mobile_No === process.env.ADMIN_MOBILE_NO && Book_Pass === process.env.ADMIN_PASSWORD) {
-    const token = jwt.sign({ Ac_Id: "admin", role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+  const adminUsers = JSON.parse(process.env.ADMIN_USERS!);
+
+  const matchedAdmin = adminUsers.find(
+    (user: any) => user.ADMIN_MOBILE_NO === Mobile_No && user.ADMIN_PASSWORD === Book_Pass
+  );
+  if (matchedAdmin) {
+    const token = jwt.sign({ Ac_Id: matchedAdmin.Id, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
     return {
-      user: { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true },
+      user: { Id: matchedAdmin.Id, Ac_Name: matchedAdmin.ADMIN_NAME, isAdmin: true },
       token,
     };
   }
@@ -141,16 +171,20 @@ export const login = async (payload: IUser) => {
 };
 
 export const getCurrentUser = async (Ac_Id: string) => {
-  if (Ac_Id === "admin") {
-    return { Id: "admin", Ac_Name: process.env.ADMIN_NAME, isAdmin: true };
+  const adminUsers = JSON.parse(process.env.ADMIN_USERS!);
+  const matchedAdmin = adminUsers.find((user: any) => user.Id === Ac_Id);
+  if (matchedAdmin) {
+    return { Id: matchedAdmin.Id, Ac_Name: matchedAdmin.ADMIN_NAME, isAdmin: true };
   }
+
   const result = await pool
     .request()
     .input("Id", Ac_Id)
-    .query(`SELECT  Id, Ac_Name, Mobile_No,Ac_Code
-         Our_Shop_Ac FROM Ac_Mas WHERE Id = @Id`);
+    .query(`SELECT  Id, Ac_Name, Mobile_No, Ac_Code, Our_Shop_Ac
+         FROM Ac_Mas WHERE Id = @Id`);
   return result.recordset[0];
 }
+
 export const forgotPassword = async (payload: IUser) => {
   const { Mobile_No } = payload;
   if (!Mobile_No) throw new Error("Mobile_No is required");
