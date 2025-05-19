@@ -42,9 +42,9 @@ app.use(cookieParser());
 app.use(compression());
 registerRoutes(app);
 
-app.use(express.static(path.join(__dirname, "../../shreeji-veg-js/dist")));
+app.use(express.static(path.join(__dirname, "../shreeji-veg-js/dist")));
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../../shreeji-veg-js/dist/index.html"));
+  res.sendFile(path.join(__dirname, "../shreeji-veg-js/dist/index.html"));
 });
 
 io.on("connection", (socket) => {
