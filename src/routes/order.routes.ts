@@ -67,10 +67,10 @@ router.post("/editSalePurMain", authVerify, async (req, res) => {
 
 
 router.get("/OrderData", authVerify, async (req, res) => {
-  const { fromDate, toDate, db_name } = req.query;
+  const { fromDate, toDate, db_name,lang } = req.query;
   const { isAdmin, Id: Ac_Id } = req.user;
   try {
-    const result = await getOrderData({ fromDate, toDate, Ac_Id, isAdmin, db_name });
+    const result = await getOrderData({ fromDate, toDate, Ac_Id, isAdmin, db_name, lang });
     return successResponse(res, result, "Order data fetched successfully.");
   } catch (error) {
     return errorResponse(res, (error as Error).message);

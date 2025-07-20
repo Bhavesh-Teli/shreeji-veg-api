@@ -41,7 +41,6 @@ router.delete("/deleteNotification", authVerify,authorizeAdmin, async (req, res)
         const result = await deleteNotification(Ids);
         return successResponse(res, result, "Deleted notifications successfully");
     } catch (error) {
-        console.log(error);
         return errorResponse(res, (error as Error).message);
     }
 });
@@ -50,7 +49,6 @@ router.delete("/deleteAllNotification", authVerify,authorizeAdmin, async (req, r
         const result = await deleteAllNotification();
         return successResponse(res, result, "Deleted notifications successfully");
     } catch (error) {
-        console.log(error);
         return errorResponse(res, (error as Error).message);
     }
 });

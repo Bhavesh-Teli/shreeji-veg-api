@@ -56,7 +56,6 @@ export const addSalePurMain = async (
     const Bill_No = await autoNumber(pool, "Sale_Pur_Main", "Bill_No", `Type = '${Type}' AND Book_Ac_Id = ${bookAcId} AND Branch_Id = ${branchId}`);
     const fullBillNo = `${Bill_No}`;
     const billType = `${Ac_Code}-${Order_Count}`;
-    console.log(billType)
 
     const [id, typeId, bookVNo, vNo] = await Promise.all([
       autoNumber(pool, "Sale_Pur_Main", "Id", "Type <> 'Purchase Old' AND Type <> 'Sale Old'"),
@@ -346,10 +345,23 @@ export const insertSalePurDetail = async (
   }
 };
 
-export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }: any) => {
+export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name, lang }: any) => {
   try {
     const DBName = process.env.DB_PREFIX + db_name;
     const pool = await getDbPool(DBName);
+
+    let itemNameColumn = 'I.Itm_Name';
+    let itemNameAlias = 'I.Itm_Name AS Itm_Name';
+    let itemNameEnColumn = '';
+    if (lang === 'hi') {
+      itemNameColumn = 'I.Part_Name';
+      itemNameAlias = 'I.Part_Name AS Itm_Name';
+      itemNameEnColumn = ', I.Itm_Name AS Itm_Name_en';
+    } else if (lang === 'gu') {
+      itemNameColumn = 'I.Ex_Location';
+      itemNameAlias = 'I.Ex_Location AS Itm_Name';
+      itemNameEnColumn = ', I.Itm_Name AS Itm_Name_en';
+    }
 
     const optimizedQuery = `
       SELECT 
@@ -363,7 +375,8 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name }
         A.Our_Shop_Ac,
         D.SrNo,
         D.Itm_Id,
-        I.Itm_Name,
+        ${itemNameAlias}
+        ${itemNameEnColumn},
         D.Qty,
         D.Uni_ID,
         U.Uni_Name,
