@@ -9,6 +9,7 @@ import registerRoutes from "./routes/index";
 import { connectDB } from "./config/dbConfig";
 import compression from "compression";
 import path from "path";
+import webhookRoutes from "./webHook";
 
 dotenv.config();
 const ALLOWED_ORIGINS = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : [];
@@ -31,7 +32,7 @@ app.use(
 );
 
 app.options('*', cors()); // Preflight support
-
+webhookRoutes(app);
 app.get('/api/healthcheck', (req, res) => {
   res.json({ status: 'Backend is running' });
 });
@@ -42,9 +43,9 @@ app.use(cookieParser());
 app.use(compression());
 registerRoutes(app);
 
-app.use(express.static(path.join(__dirname, "../shreeji-veg-js/dist")));
+app.use(express.static(path.join(__dirname, "../SHREEJI-VEG-JS/dist")));
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../shreeji-veg-js/dist/index.html"));
+  res.sendFile(path.join(__dirname, "../SHREEJI-VEG-JS/dist/index.html"));
 });
 
 io.on("connection", (socket) => {
