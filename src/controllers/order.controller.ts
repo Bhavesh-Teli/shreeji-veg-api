@@ -44,7 +44,10 @@ export const addSalePurMain = async (
   Order_Count: number,
   details: SalePurDetailRow[],
   Bill_Date: string,
-  Our_Shop_Ac: number
+  Our_Shop_Ac: number,
+  Address1: string,
+  Address2: string,
+  DeliveryTime: string
 ) => {
   const transaction = pool.transaction();
 
@@ -73,7 +76,7 @@ export const addSalePurMain = async (
       AmtInWord, Ac_Id, Remark, Type, mem_no, Pay_Mode,
       Cash_Bill, Cancel_Bill, Order_Close, USER_ID,
       Sys_Date_Add, Sys_Time_Add,
-      Area_Id, Branch_ID, Bala_Amt, LR_No, Manu_Order_Close
+      Area_Id, Branch_ID, Bala_Amt, LR_No, Manu_Order_Close,Address1,Address2,DeliveryTime
     ) VALUES (
       @Id, @Type_Id, @Book_V_No, @V_No, @Book_Id, @Book_Ac_Id,
       @Bill_No, @Bill_NoP, @Bill_NoS, @Full_Bill_No, @Bill_Type, @Bill_Date,
@@ -82,7 +85,7 @@ export const addSalePurMain = async (
       @AmtInWord, @Ac_Id, @Remark, @Type, @mem_no, @Pay_Mode,
       @Cash_Bill, @Cancel_Bill, @Order_Close, @USER_ID,
       @Sys_Date, @Sys_Time,
-      @Area_Id, @Branch_ID, @Bala_Amt, @LR_No, @Manu_Order_Close
+      @Area_Id, @Branch_ID, @Bala_Amt, @LR_No, @Manu_Order_Close, @Deli_Add_1, @Deli_Add_2, @Deli_Add_3
     )
   `;
     await transaction
@@ -125,6 +128,9 @@ export const addSalePurMain = async (
       .input("Bala_Amt", sql.Decimal(18, 2), 0)
       .input("LR_No", sql.Int, Order_Count)
       .input("Manu_Order_Close", sql.Bit, Our_Shop_Ac)
+      .input("Deli_Add_1", sql.NVarChar, Address1)
+      .input("Deli_Add_2", sql.NVarChar, Address2)
+      .input("Deli_Add_3", sql.NVarChar, DeliveryTime)
       .query(insertQuery);
 
     await insertSalePurDetail(transaction, mode, details, Ac_Id, Ac_Code, id, typeId, Order_Count, Bill_No, Bill_Date, Our_Shop_Ac);
@@ -152,7 +158,10 @@ export const editSalePurMain = async (
   Order_Count: number,
   details: SalePurDetailRow[],
   Bill_Date: string,
-  Our_Shop_Ac: number
+  Our_Shop_Ac: number,
+  Address1: string,
+  Address2: string,
+  DeliveryTime: string
 ) => {
   const transaction = pool.transaction();
 
@@ -172,7 +181,7 @@ export const editSalePurMain = async (
 
     const updateQuery = `
       UPDATE Sale_Pur_Main
-      SET Sys_Date_Edit = @Sys_Date, Sys_Time_Edit = @Sys_Time, Total_Qty = @Total_Qty
+      SET Sys_Date_Edit = @Sys_Date, Sys_Time_Edit = @Sys_Time, Total_Qty = @Total_Qty,Deli_Add_1 = @Address1,Deli_Add_2 = @Address2,Deli_Add_3 = @DeliveryTime
       WHERE Id = @Id AND Ac_Id = @Ac_Id
     `;
 
@@ -183,6 +192,9 @@ export const editSalePurMain = async (
       .input("Id", sql.Int, Id)
       .input("Ac_Id", sql.Int, Ac_Id)
       .input("Total_Qty", sql.Real, Total_Qty)
+      .input("Address1", sql.NVarChar, Address1)
+      .input("Address2", sql.NVarChar, Address2)
+      .input("DeliveryTime", sql.NVarChar, DeliveryTime)
       .query(updateQuery);
 
     await insertSalePurDetail(transaction, mode, details, Ac_Id, Ac_Code, Id, typeId, Order_Count, Bill_No, Bill_Date, Our_Shop_Ac);
@@ -367,9 +379,13 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name, 
       SELECT 
         M.Bill_No,
         M.Bill_Date,
+        M.Bill_Type,
         M.LR_No,
         M.Id,
         M.Ac_Id,
+        M.Deli_Add_1,
+        M.Deli_Add_2,
+        M.Deli_Add_3,
         A.Ac_Name,
         A.Ac_Code,
         A.Our_Shop_Ac,
@@ -416,9 +432,13 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name, 
           Ac_Code: row.Ac_Code,
           Ac_Name: row.Ac_Name,
           Ac_Id: row.Ac_Id,
+          Address1: row.Deli_Add_1,
+          Address2: row.Deli_Add_2,
+          DeliveryTime: row.Deli_Add_3,
           Our_Shop_Ac: row.Our_Shop_Ac,
           Bill_No: row.Bill_No,
           Bill_Date: row.Bill_Date,
+          Bill_Type: row.Bill_Type,
           Order_Count: row.LR_No,
           Details: [],
         };

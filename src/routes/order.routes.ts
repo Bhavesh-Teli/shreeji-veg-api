@@ -33,7 +33,7 @@ router.get("/getFreezeTime", authVerify, async (req, res) => {
   } catch (error) {
     return errorResponse(res, (error as Error).message);
   }
-}); 
+});
 
 router.get("/getUnit", authVerify, async (req, res) => {
   try {
@@ -47,8 +47,8 @@ router.get("/getUnit", authVerify, async (req, res) => {
 // Route to insert data into Sale_Pur_Main
 router.post("/addSalePurMain", authVerify, async (req, res) => {
   try {
-    const { mode, Bill_Date, Order_Count, details , Ac_Id, Ac_Code, Our_Shop_Ac} = req.body;
-    await addSalePurMain(mode, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac);
+    const { mode, Bill_Date, Order_Count, details, Ac_Id, Ac_Code, Our_Shop_Ac, Address1, Address2, DeliveryTime } = req.body;
+    await addSalePurMain(mode, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac, Address1, Address2, DeliveryTime);
     return successResponse(res, null, "Data inserted successfully into Sale_Pur_Main!");
   } catch (error) {
     return errorResponse(res, (error as Error).message);
@@ -57,8 +57,8 @@ router.post("/addSalePurMain", authVerify, async (req, res) => {
 
 router.post("/editSalePurMain", authVerify, async (req, res) => {
   try {
-    const { mode, Bill_Date, Order_Count, Id, details, Ac_Id, Ac_Code, Our_Shop_Ac } = req.body;
-    await editSalePurMain(mode, Id, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac);
+    const { mode, Bill_Date, Order_Count, Id, details, Ac_Id, Ac_Code, Our_Shop_Ac, Address1, Address2, DeliveryTime } = req.body;
+    await editSalePurMain(mode, Id, Ac_Id, Ac_Code, Order_Count, details, Bill_Date, Our_Shop_Ac, Address1, Address2, DeliveryTime);
     return successResponse(res, null, "Data inserted successfully into Sale_Pur_Main!");
   } catch (error) {
     return errorResponse(res, (error as Error).message);
@@ -67,7 +67,7 @@ router.post("/editSalePurMain", authVerify, async (req, res) => {
 
 
 router.get("/OrderData", authVerify, async (req, res) => {
-  const { fromDate, toDate, db_name,lang } = req.query;
+  const { fromDate, toDate, db_name, lang } = req.query;
   const { isAdmin, Id: Ac_Id } = req.user;
   try {
     const result = await getOrderData({ fromDate, toDate, Ac_Id, isAdmin, db_name, lang });

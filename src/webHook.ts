@@ -8,9 +8,9 @@ const SECRET = process.env.GITHUB_WEBHOOK_SECRET as string;
 const DEPLOY_MOBILE_NO = process.env.DEPLOY_MOBILE_NO as string;
 if (!SECRET) throw new Error("Missing GITHUB_WEBHOOK_SECRET");
 
-const FRONTEND_DIR = "D:\\SHREEJI-VEG\\SHREEJI-VEG-JS";
-const BACKEND_DIR = "D:\\SHREEJI-VEG\\SHREEJI-VEG-API";
-const PM2_NAME = "shreeji-veg-api";
+const FRONTEND_DIR = process.env.FRONTEND_DIR as string;
+const BACKEND_DIR = process.env.BACKEND_DIR as string;
+const PM2_NAME = process.env.PM2_NAME as string;
 
 // Middleware to parse raw body for HMAC verification
 const jsonWithRaw = bodyParser.json({
@@ -54,12 +54,9 @@ export default function webhookRoutes(app: Express) {
   });
 
   app.post("/webhook-backend", jsonWithRaw, (req: any, res: any) => {
-    console.log("Webhook received successfully");
-    if (!isValidSignature(req)){
-      console.log("Invalid signature");
-      return res.status(401).json({ message: "Invalid signature" });
-    }
-    console.log("Valid signature");
+
+    if (!isValidSignature(req)) return res.status(401).json({ message: "Invalid signature" });
+
     SendWhatsappMessage(DEPLOY_MOBILE_NO, "⚙️ Backend webhook triggered");
 
     const cmd = `
