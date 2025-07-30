@@ -76,8 +76,8 @@ export const addSalePurMain = async (
       AmtInWord, Ac_Id, Remark, Type, mem_no, Pay_Mode,
       Cash_Bill, Cancel_Bill, Order_Close, USER_ID,
       Sys_Date_Add, Sys_Time_Add,
-      Area_Id, Branch_ID, Bala_Amt, LR_No, Manu_Order_Close,Address1,Address2,DeliveryTime
-    ) VALUES (
+      Area_Id, Branch_ID, Bala_Amt, LR_No, Manu_Order_Close,Deli_Add_1,Deli_Add_2,Deli_Add_3
+    ) VALUES (  
       @Id, @Type_Id, @Book_V_No, @V_No, @Book_Id, @Book_Ac_Id,
       @Bill_No, @Bill_NoP, @Bill_NoS, @Full_Bill_No, @Bill_Type, @Bill_Date,
       @Gross_Amt, @Total_Amount, @Total_Qty, @Total_Sundry_Disc_Amt,
@@ -147,6 +147,7 @@ export const addSalePurMain = async (
 
   } catch (error: any) {
     await transaction.rollback();
+    throw error;
   }
 };
 
@@ -388,6 +389,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name, 
         M.Deli_Add_3,
         A.Ac_Name,
         A.Ac_Code,
+        A.Mobile_No,
         A.Our_Shop_Ac,
         D.SrNo,
         D.Itm_Id,
@@ -431,6 +433,7 @@ export const getOrderData = async ({ fromDate, toDate, Ac_Id, isAdmin, db_name, 
           Id: row.Id,
           Ac_Code: row.Ac_Code,
           Ac_Name: row.Ac_Name,
+          Mobile_No: row.Mobile_No,
           Ac_Id: row.Ac_Id,
           Address1: row.Deli_Add_1,
           Address2: row.Deli_Add_2,
