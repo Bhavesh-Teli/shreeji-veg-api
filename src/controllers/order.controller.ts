@@ -182,7 +182,7 @@ export const editSalePurMain = async (
 
     const updateQuery = `
       UPDATE Sale_Pur_Main
-      SET Sys_Date_Edit = @Sys_Date, Sys_Time_Edit = @Sys_Time, Total_Qty = @Total_Qty,Deli_Add_1 = @Address1,Deli_Add_2 = @Address2,Deli_Add_3 = @DeliveryTime
+      SET Sys_Date_Edit = @Sys_Date, Sys_Time_Edit = @Sys_Time, Total_Qty = @Total_Qty,Deli_Add_1 = @Deli_Add_1,Deli_Add_2 = @Deli_Add_2,Deli_Add_3 = @Deli_Add_3
       WHERE Id = @Id AND Ac_Id = @Ac_Id
     `;
 
@@ -193,9 +193,9 @@ export const editSalePurMain = async (
       .input("Id", sql.Int, Id)
       .input("Ac_Id", sql.Int, Ac_Id)
       .input("Total_Qty", sql.Real, Total_Qty)
-      .input("Address1", sql.NVarChar, Address1)
-      .input("Address2", sql.NVarChar, Address2)
-      .input("DeliveryTime", sql.NVarChar, DeliveryTime)
+      .input("Deli_Add_1", sql.NVarChar, Address1)
+      .input("Deli_Add_2", sql.NVarChar, Address2)
+      .input("Deli_Add_3", sql.NVarChar, DeliveryTime)
       .query(updateQuery);
 
     await insertSalePurDetail(transaction, mode, details, Ac_Id, Ac_Code, Id, typeId, Order_Count, Bill_No, Bill_Date, Our_Shop_Ac);
