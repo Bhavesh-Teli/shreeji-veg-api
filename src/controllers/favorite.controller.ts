@@ -16,8 +16,9 @@ export const getAllItem = async (lang: 'en' | 'hi' | 'gu') => {
     SELECT 
       Itm_Mas.Itm_ID,
       ${itemNameColumn} AS Itm_Name
-      ${itmNameEnColumn} ,
+      ${itmNameEnColumn},
       Itm_Mas.Sale_Rate,
+      Itm_Mas.Photo,
       Itm_Mas.Uni_ID,
       Uni_Mas.Uni_Name,
       Itm_Grp.IGP_NAME
@@ -88,6 +89,7 @@ export const getFavorite = async (payload: any) => {
         ${itmNameEnColumn},
         IM.Uni_ID,
         UM.Uni_Name,
+        IM.Photo,
         IG.IGP_NAME,
         UF.Sort_Index
       FROM [Itm_User_Fav] UF

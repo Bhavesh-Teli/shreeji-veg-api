@@ -24,6 +24,8 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mssql": "^11.0.1",
+    "multer": "^2.2.0",
+    "sharp": "^0.35.3",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
@@ -35,7 +37,9 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/morgan": "^1.9.9",
     "@types/mssql": "^9.1.7",
+    "@types/multer": "^2.2.0",
     "@types/node": "^22.13.10",
+    "@types/sharp": "^0.31.1",
     "@types/socket.io": "^3.0.1",
     "esbuild": "^0.25.1",
     "morgan": "^1.10.0",

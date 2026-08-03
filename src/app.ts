@@ -43,6 +43,8 @@ app.use(cookieParser());
 app.use(compression());
 registerRoutes(app);
 
+app.use('/vegetable-images', express.static(path.join(__dirname, '../public/vegetable-images')));
+
 app.use(express.static(path.join(__dirname, process.env.FRONTEND_DIR as string)));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, process.env.FRONTEND_DIR as string + "/dist/index.html"));
