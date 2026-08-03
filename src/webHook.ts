@@ -8,8 +8,8 @@ const SECRET = process.env.GITHUB_WEBHOOK_SECRET as string;
 const DEPLOY_MOBILE_NO = process.env.DEPLOY_MOBILE_NO as string;
 if (!SECRET) throw new Error("Missing GITHUB_WEBHOOK_SECRET");
 
-const FRONTEND_DIR = process.env.FRONTEND_DIR as string;
-const BACKEND_DIR = process.env.BACKEND_DIR as string;
+const FRONTEND_DIR_PATH = process.env.FRONTEND_DIR_PATH as string;
+const BACKEND_DIR_PATH = process.env.BACKEND_DIR_PATH as string;
 const PM2_NAME = process.env.PM2_NAME as string;
 
 // Middleware to parse raw body for HMAC verification
@@ -45,8 +45,8 @@ export default function webhookRoutes(app: Express) {
     SendWhatsappMessage(DEPLOY_MOBILE_NO, "⚙️ Frontend webhook triggered");
 
     const cmd = `
-      cd /d "${FRONTEND_DIR}" && git pull && npm install && npm run build &&
-      cd /d "${BACKEND_DIR}" && pm2 restart ${PM2_NAME}
+      cd /d "${FRONTEND_DIR_PATH}" && git pull && npm install && npm run build &&
+      cd /d "${BACKEND_DIR_PATH}" && pm2 restart ${PM2_NAME}
     `.replace(/\s+/g, " ");
 
     runCommand(cmd, "Frontend");
@@ -54,15 +54,17 @@ export default function webhookRoutes(app: Express) {
   });
 
   app.post("/webhook-backend", jsonWithRaw, (req: any, res: any) => {
-
-    if (!isValidSignature(req)) return res.status(401).json({ message: "Invalid signature" });
-
+    console.log("recieved")
+    if (!isValidSignature(req)){
+      console.log(isValidSignature)
+       return res.status(401).json({ message: "Invalid signature" });
+    }
     SendWhatsappMessage(DEPLOY_MOBILE_NO, "⚙️ Backend webhook triggered");
 
     const cmd = `
-      cd /d "${BACKEND_DIR}" && git pull && npm install && npm run build && pm2 restart ${PM2_NAME}
+      cd /d "${BACKEND_DIR_PATH}" && git pull && npm install && npm run build && pm2 restart ${PM2_NAME}
     `.replace(/\s+/g, " ");
-
+    console.log(cmd)
     runCommand(cmd, "Backend");
     return res.status(200).json({ message: "Webhook received successfully" });
   });
