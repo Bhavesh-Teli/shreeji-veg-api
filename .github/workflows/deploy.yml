@@ -26,12 +26,7 @@ jobs:
           npm install
           npm run build
 
-          pm2 list | findstr "karnavati-agro-api" >nul 2>&1
-          if %errorlevel%==0 (
-            pm2 restart karnavati-agro-api --update-env
-          ) else (
-            pm2 start dist/app.js --name karnavati-agro-api --update-env
-          )
+          pm2 restart karnavati-agro-api --update-env || pm2 start dist/app.js --name karnavati-agro-api --update-env
           pm2 save
 
           cd ../frontend
@@ -40,6 +35,7 @@ jobs:
 
       # ── 2. SHREEJI VEG Deployment ──
       - name: Deploy Shreeji Veg
+        if: always()
         run: |
           echo "Deploying Shreeji Veg..."
 
@@ -50,12 +46,7 @@ jobs:
           npm install
           npm run build
 
-          pm2 list | findstr "shreeji-veg-api" >nul 2>&1
-          if %errorlevel%==0 (
-            pm2 restart shreeji-veg-api --update-env
-          ) else (
-            pm2 start dist/app.js --name shreeji-veg-api --update-env
-          )
+          pm2 restart shreeji-veg-api --update-env || pm2 start dist/app.js --name shreeji-veg-api --update-env
           pm2 save
 
           cd ../frontend
