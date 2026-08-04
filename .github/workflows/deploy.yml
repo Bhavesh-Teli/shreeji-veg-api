@@ -24,15 +24,15 @@ jobs:
           git pull origin main
 
           cd backend
-          npm install
-          npm run build
+          call npm install
+          call npm run build
 
-          pm2 restart karnavati-agro-api --update-env || pm2 start dist/app.js --name karnavati-agro-api --update-env
-          pm2 save
+          call pm2 restart karnavati-agro-api --update-env || call pm2 start dist/app.js --name karnavati-agro-api --update-env
+          call pm2 save
 
           cd ../frontend
-          npm install
-          npm run build
+          call npm install
+          call npm run build
 
       # ── 2. SHREEJI VEG Deployment ──
       - name: Deploy Shreeji Veg
@@ -45,12 +45,12 @@ jobs:
           git pull origin main
 
           cd backend
-          npm install
-          npm run build
+          call npm install
+          call npm run build
 
-          pm2 restart shreeji-veg-api --update-env || pm2 start dist/app.js --name shreeji-veg-api --update-env
-          pm2 save
+          call pm2 restart shreeji-veg-api --update-env || call pm2 start dist/app.js --name shreeji-veg-api --update-env
+          call pm2 save
 
           cd ../frontend
-          npm install
-          npm run build
+          call npm install
+          call npm run build
