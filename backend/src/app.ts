@@ -9,7 +9,6 @@ import registerRoutes from "./routes/index";
 import { connectDB } from "./config/dbConfig";
 import compression from "compression";
 import path from "path";
-import webhookRoutes from "./webHook";
 
 dotenv.config();
 const ALLOWED_ORIGINS = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : [];
@@ -32,7 +31,6 @@ app.use(
 );
 
 app.options('*', cors()); // Preflight support
-webhookRoutes(app);
 app.get('/api/healthcheck', (req, res) => {
   res.json({ status: 'Backend is running' });
 });

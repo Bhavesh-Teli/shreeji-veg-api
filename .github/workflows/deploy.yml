@@ -1,4 +1,4 @@
-name: Deploy Shreeji Veg API
+name: Deploy to Both Companies
 
 on:
   push:
@@ -14,42 +14,50 @@ jobs:
         shell: cmd
 
     steps:
-      - name: Sync local dev folder
+      # ── 1. KARNAVATI AGRO Deployment ──
+      - name: Deploy Karnavati Agro
         run: |
-          cd /d "d:\test folder\Shreeji\shreeji-veg-api"
+          echo "Deploying Karnavati Agro..."
+
+          cd /d "D:\Easy_FAS_Karna_Veg\Karnavati_Agro_AppMain\KarnavatiAgroApp"
           git pull origin main
 
-      - name: Checkout latest code
-        uses: actions/checkout@v4
+          cd backend
+          npm install
+          npm run build
 
-      # ── Backend Deployment ──
-      - name: Install backend dependencies
-        working-directory: backend
-        run: npm install
+          pm2 list | findstr "karnavati-agro-api" >nul 2>&1
+          if %errorlevel%==0 (
+            pm2 restart karnavati-agro-api --update-env
+          ) else (
+            pm2 start dist/app.js --name karnavati-agro-api --update-env
+          )
+          pm2 save
 
-      - name: Build backend
-        working-directory: backend
-        run: npm run build
+          cd ../frontend
+          npm install
+          npm run build
 
-      - name: Restart backend (PM2)
-        working-directory: backend
+      # ── 2. SHREEJI VEG Deployment ──
+      - name: Deploy Shreeji Veg
         run: |
+          echo "Deploying Shreeji Veg..."
+
+          cd /d "D:\Easy_FAS_Size_Pooja\Shreeji_Veg_AppMain\ShreejiVegApp"
+          git pull origin main
+
+          cd backend
+          npm install
+          npm run build
+
           pm2 list | findstr "shreeji-veg-api" >nul 2>&1
           if %errorlevel%==0 (
-            echo Restarting existing PM2 process...
             pm2 restart shreeji-veg-api --update-env
           ) else (
-            echo Starting new PM2 process...
             pm2 start dist/app.js --name shreeji-veg-api --update-env
           )
           pm2 save
 
-      # ── Frontend Deployment ──
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm install
-
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
+          cd ../frontend
+          npm install
+          npm run build
