@@ -1,14 +1,23 @@
-# Node.js dependencies
+# Dependencies
 node_modules/
 
-# Output directories
-dist
-# Keep environment variables out of version control
+# Environment
 .env
-package-lock.json
-NotificationApp_Log*.txt
-testing
+.env.local
+.env.*.local
 
-# Ignore uploaded vegetable images
-public/vegetable-images/
-public/items-images/
+# Build
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

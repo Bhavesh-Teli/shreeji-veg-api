@@ -1,0 +1,14 @@
+# Node.js dependencies
+node_modules/
+
+# Output directories
+dist
+# Keep environment variables out of version control
+.env
+package-lock.json
+NotificationApp_Log*.txt
+testing
+
+# Ignore uploaded vegetable images
+public/vegetable-images/
+public/items-images/
