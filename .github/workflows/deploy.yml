@@ -27,8 +27,8 @@ jobs:
           call npm install
           call npm run build
 
-          call pm2 restart karnavati-agro-api --update-env || call pm2 start dist/app.js --name karnavati-agro-api --update-env
-          call pm2 save
+          call npx pm2 restart karnavati-agro-api --update-env || call npx pm2 start dist/app.js --name karnavati-agro-api --update-env
+          call npx pm2 save
 
           cd ../frontend
           call npm install
@@ -48,8 +48,8 @@ jobs:
           call npm install
           call npm run build
 
-          call pm2 restart shreeji-veg-api --update-env || call pm2 start dist/app.js --name shreeji-veg-api --update-env
-          call pm2 save
+          call npx pm2 restart shreeji-veg-api --update-env || call npx pm2 start dist/app.js --name shreeji-veg-api --update-env
+          call npx pm2 save
 
           cd ../frontend
           call npm install
