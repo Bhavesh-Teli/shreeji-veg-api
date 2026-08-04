@@ -1,6 +1,7 @@
 import { Button, Card, Row, Col, message, theme } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { COMPANY_CONFIG } from "../../utils/companyConfig";
 
 const SelectLanguage = () => {
     const { t, i18n } = useTranslation();
@@ -30,7 +31,7 @@ const SelectLanguage = () => {
                 <Row gutter={[32, 16]} align="middle" justify="center">
                     <Col xs={24} md={12}>
                         <img
-                            src="/01.png"
+                            src={COMPANY_CONFIG.logo}
                             alt="Select Language"
                             style={{
                                 width: "100%",

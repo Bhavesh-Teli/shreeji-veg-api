@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { IUser } from "../types/IUser";
 import { SendWhatsappMessage } from "../utils/whatsappApi";
 import { sendNotification } from "./notification.controller";
+import { COMPANY_CONFIG } from "../config/companyConfig";
 
 const OTP_EXPIRY = 5 * 60 * 1000;
 const otpStorage = new Map<string, { otp: string; expiresAt: number }>();
@@ -36,7 +37,7 @@ export const requestOTP = async (mobileNo: string, Ac_Name: string) => {
   const otp = generateOTP();
   otpStorage.set(mobileNo, { otp, expiresAt: Date.now() + OTP_EXPIRY });
 
-  const Message = `Dear ${Ac_Name}, \n*${otp}* is your one time password (OTP). Please enter the OTP to proceed.\nThank you,\n*Team Shreeji Veg*`;
+  const Message = `Dear ${Ac_Name}, \n*${otp}* is your one time password (OTP). Please enter the OTP to proceed.\nThank you,\n*${COMPANY_CONFIG.teamName}*`;
   SendWhatsappMessage(mobileNo, Message);
 
   return { message: "OTP sent successfully" };
@@ -112,9 +113,9 @@ export const verifyOTPAndRegister = async (payload: IUser, enteredOTP: string) =
 
 
     await transaction.commit();
-    const welcomeMessage = `*Welcome to Shreeji Veg App*,\n\nDear ${Ac_Name},\nYou have successfully created your account.\n\n*Username:* ${Mobile_No}\n*Password:* ${Book_Pass}\n\nPlease wait for login — your account is pending admin approval. You will receive a confirmation message once your account is activated.\n\nThank you,\n*Team Shreeji Veg*`;
+    const welcomeMessage = `*Welcome to ${COMPANY_CONFIG.appName}*,\n\nDear ${Ac_Name},\nYou have successfully created your account.\n\n*Username:* ${Mobile_No}\n*Password:* ${Book_Pass}\n\nPlease wait for login — your account is pending admin approval. You will receive a confirmation message once your account is activated.\n\nThank you,\n*${COMPANY_CONFIG.teamName}*`;
     SendWhatsappMessage(Mobile_No, welcomeMessage);
-    const messageToAdmin = `🟢 *New User Registered* 🟢\n\n👤 *Name:* ${Ac_Name}\n📱 *Mobile:* ${Mobile_No}\n📍 *Status:* Pending Approval\n🔗 Approve User: ${process.env.APPROVR_URL}\n\nPlease review and approve if valid.\n*Team Shreeji Veg*`;
+    const messageToAdmin = `🟢 *New User Registered* 🟢\n\n👤 *Name:* ${Ac_Name}\n📱 *Mobile:* ${Mobile_No}\n📍 *Status:* Pending Approval\n🔗 Approve User: ${process.env.APPROVR_URL}\n\nPlease review and approve if valid.\n*${COMPANY_CONFIG.teamName}*`;
 
     const adminUsers = JSON.parse(process.env.ADMIN_USERS!);
     const admin2 = adminUsers.find((admin: any) => admin.Id === "admin2")!;
@@ -201,7 +202,7 @@ export const forgotPassword = async (payload: IUser) => {
   const otp = generateOTP();
   otpStorage.set(Mobile_No, { otp, expiresAt: Date.now() + OTP_EXPIRY });
 
-  const message = `Dear ${user.Ac_Name}, \n*${otp}* is your OTP to reset your password.\nDo not share this with anyone.\n*Team Shreeji Veg*`;
+  const message = `Dear ${user.Ac_Name}, \n*${otp}* is your OTP to reset your password.\nDo not share this with anyone.\n*${COMPANY_CONFIG.teamName}*`;
   SendWhatsappMessage(Mobile_No, message);
   return { message: "OTP sent successfully" };
 }

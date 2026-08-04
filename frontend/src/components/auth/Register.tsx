@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { RegisterApi, RequestOTP } from "../../services/authAPI";
 import { useTranslation } from "react-i18next";
+import { COMPANY_CONFIG } from "../../utils/companyConfig";
 
 const Register = () => {
     const navigate = useNavigate();
@@ -133,7 +134,7 @@ const Register = () => {
                 <Row gutter={[32, 16]} align="middle" justify="center">
                     <Col xs={24} md={12}>
                         <img
-                            src="/01.png"
+                            src={COMPANY_CONFIG.logo}
                             alt="Register"
                             style={{
                                 width: '100%',

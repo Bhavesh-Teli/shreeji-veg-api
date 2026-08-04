@@ -3,6 +3,7 @@ import { SendWhatsappMessage } from "../utils/whatsappApi";
 import sharp from "sharp";
 import path from "path";
 import fs from "fs";
+import { COMPANY_CONFIG } from "../config/companyConfig";
 
 export const getUnapprovedUsers = async () => {
   try {
@@ -43,7 +44,7 @@ export const approveUser = async (payload: any) => {
 
     if (!mobileNo) throw new Error("User not found.");
 
-    const Message = `Hi ${Ac_Name},\n\nWe have approved your account as requested through *Shreeji Veg App*.\n\nYou can now Login using your registered ID and password.\n\nThank you,\n*Team Shreeji Veg*`;
+    const Message = `Hi ${Ac_Name},\n\nWe have approved your account as requested through *${COMPANY_CONFIG.appName}*.\n\nYou can now Login using your registered ID and password.\n\nThank you,\n*${COMPANY_CONFIG.teamName}*`;
     SendWhatsappMessage(mobileNo, Message);
 
     await transaction.commit();

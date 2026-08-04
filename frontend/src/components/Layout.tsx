@@ -9,6 +9,7 @@ import { setUser } from "../redux/slice/authSlice";
 import { ConfigProvider, Spin, Layout as Layouts, theme, notification } from "antd";
 import { GetCurrentUser } from "../services/authAPI";
 import socket from "../utils/socket";
+import { COMPANY_CONFIG } from "../utils/companyConfig";
 
 const lightTheme = {
     algorithm: theme.defaultAlgorithm,
@@ -38,7 +39,7 @@ const Layout = () => {
     const [currentTheme, setCurrentTheme] = useState<"light" | "dark">(() => {
         return (localStorage.getItem("appTheme") as "light" | "dark") || "light";
     });
-    const token = Cookies.get("Shreeji_Veg");
+    const token = Cookies.get(COMPANY_CONFIG.cookieName);
 
     useEffect(() => {
         if (user && user.isAdmin) {

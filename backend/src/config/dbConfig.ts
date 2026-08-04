@@ -1,5 +1,6 @@
 import sql from "mssql";
 import dotenv from "dotenv";
+import { COMPANY_CONFIG } from "./companyConfig";
 import { getCurrentYearDbNameFromComMass } from "../utils/dbFunctions";
 
 dotenv.config();
@@ -43,7 +44,7 @@ export const connectDB = async () => {
       database: fullDbName,
     });
     await pool.connect();
-    console.log("Connected to ShreejiVegDB ✅");
+    console.log(`Connected to ${COMPANY_CONFIG.name} DB ✅`);
   } catch (err) {
     console.error("Database Connection Failed ❌", err);
     process.exit(1);

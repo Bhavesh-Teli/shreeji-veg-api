@@ -9,6 +9,7 @@ import { AppDispatch } from "../../redux/store";
 import { setUser } from "../../redux/slice/authSlice";
 import { ILogin } from "../../types/ILogin";
 import { useTranslation } from "react-i18next";
+import { COMPANY_CONFIG } from "../../utils/companyConfig";
 
 const Login = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -52,7 +53,7 @@ const Login = () => {
     try {
       const response = await LoginApi(values);
       message.success(t("login.loginSuccess"));
-      Cookies.set("Shreeji_Veg", response.data.token, { expires: 15 });
+      Cookies.set(COMPANY_CONFIG.cookieName, response.data.token, { expires: 15 });
       dispatch(setUser(response.data.user));
 
       if (values.remember) {
@@ -100,7 +101,7 @@ const Login = () => {
         <Row gutter={[32, 16]} align="middle" justify="center">
           <Col xs={24} md={12}>
             <img
-              src="/01.png"
+              src={COMPANY_CONFIG.logo}
               alt="Login Visual"
               style={{
                 width: "100%",

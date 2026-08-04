@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { GetNotifaction, MarkNotificationAsSeen } from '../../services/notificationAPI';
 import { useTranslation } from 'react-i18next';
 import { DownloadOutlined } from '@ant-design/icons';
+import { COMPANY_CONFIG, isKarnavati } from '../../utils/companyConfig';
 
 const { Header } = Layout;
 const { useBreakpoint } = Grid;
@@ -128,7 +129,7 @@ const Navbar = ({ onToggleTheme, currentTheme }: NavbarProps) => {
   const handleLogout = async () => {
     await LogoutApi()
     dispatch(setUser(null));
-    Cookies.remove("Shreeji_Veg");
+    Cookies.remove(COMPANY_CONFIG.cookieName);
     navigate("/login");
     message.success(t('nav.logoutSuccess'));
   }
@@ -256,9 +257,9 @@ const Navbar = ({ onToggleTheme, currentTheme }: NavbarProps) => {
           fontWeight: 'bold',
         }}
       >
-        <img className='logo-img' src="/01.png" alt="logo" style={{ height: '44px' }} />
+        <img className='logo-img' src={COMPANY_CONFIG.logo} alt="logo" style={{ height: '44px' }} />
         <span className="hidden md:inline text-[20px] logo-text">
-          {t('nav.ShreejiVeg')}
+          {isKarnavati ? t('nav.KarnavatiAgro') : t('nav.ShreejiVeg')}
         </span>
         <span>
           <Input

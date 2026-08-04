@@ -2,6 +2,7 @@ import { Router } from "express";
 import { forgotPassword, getCurrentUser, login, requestOTP, resetPassword, verifyOTPAndRegister } from "../controllers/auth.controller";
 import { errorResponse, successResponse } from "../utils/responseHelper";
 import { authVerify } from "../middleware/middleware";
+import { COMPANY_CONFIG } from "../config/companyConfig";
 
 const router = Router();
 
@@ -49,7 +50,7 @@ router.get("/getCurrentUser", authVerify, async (req, res) => {
 
 router.post("/logout", authVerify, async (req, res) => {
     try {
-        res.clearCookie("Shreeji_Veg").status(200).json({
+        res.clearCookie(COMPANY_CONFIG.cookieName).status(200).json({
             success: true,
             message: "Logged out successfully.",
         });

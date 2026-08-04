@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import React from "react";
+import { COMPANY_CONFIG, isKarnavati } from "../../utils/companyConfig";
 
 interface OrderPDFProps {
     orderData: any;
@@ -31,16 +32,25 @@ const OrderPDF: React.FC<OrderPDFProps> = ({ orderData }) => {
 
                 <div style={{ border: "1px solid black", padding: "10px", display: "flex", alignItems: "center" }}>
                     <div style={{ marginLeft: "10px", marginRight: "10px" }}>
-                        <img src="/01.png" alt="Logo" style={{ width: "200px", height: "130px", objectFit: "contain" }} />
+                        <img src={COMPANY_CONFIG.logo} alt="Logo" style={{ width: "200px", height: "130px", objectFit: "contain" }} />
                     </div>
 
                     <div style={{ textAlign: "center", width: "100%", }}>
                         <h1 style={{ fontSize: "30px", marginLeft: "10px", marginBottom: "0" }}>
-                            <strong>SHREEJI VEG. & FRUIT</strong>
+                            <strong>{COMPANY_CONFIG.pdfTitle}</strong>
                         </h1>
                         <p style={{ fontSize: "11pt", margin: "0", lineHeight: "1.6", wordSpacing: "2px" }}>
-                            D-31, Vishal Nagar Society, B/s. Sardar Bridge, Adajan Road, SURAT<br />
-                            Phone (O): 9924613277 , Mobile No.: 7211177000
+                            {isKarnavati ? (
+                                <>
+                                    {COMPANY_CONFIG.address}<br />
+                                    {COMPANY_CONFIG.phone && <span>{COMPANY_CONFIG.phone}</span>}
+                                </>
+                            ) : (
+                                <>
+                                    D-31, Vishal Nagar Society, B/s. Sardar Bridge, Adajan Road, SURAT<br />
+                                    Phone (O): 9924613277 , Mobile No.: 7211177000
+                                </>
+                            )}
                         </p>
                     </div>
                 </div>
