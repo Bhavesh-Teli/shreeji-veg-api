@@ -1,0 +1,50 @@
+name: Deploy Shreeji Veg API
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - name: Checkout latest code
+        uses: actions/checkout@v4
+
+      # ── Backend Deployment ──
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+
+      - name: Restart backend (PM2)
+        working-directory: backend
+        run: |
+          pm2 list | findstr "shreeji-veg-api" >nul 2>&1
+          if %errorlevel%==0 (
+            echo Restarting existing PM2 process...
+            pm2 restart shreeji-veg-api --update-env
+          ) else (
+            echo Starting new PM2 process...
+            pm2 start dist/app.js --name shreeji-veg-api --update-env
+          )
+          pm2 save
+
+      # ── Frontend Deployment ──
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
