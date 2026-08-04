@@ -19,6 +19,7 @@ jobs:
         run: |
           echo "Deploying Karnavati Agro..."
 
+          git config --global --add safe.directory "D:/Easy_FAS_Karna_Veg/Karnavati_Agro_AppMain/KarnavatiAgroApp"
           cd /d "D:\Easy_FAS_Karna_Veg\Karnavati_Agro_AppMain\KarnavatiAgroApp"
           git pull origin main
 
@@ -39,6 +40,7 @@ jobs:
         run: |
           echo "Deploying Shreeji Veg..."
 
+          git config --global --add safe.directory "D:/Easy_FAS_Size_Pooja/Shreeji_Veg_AppMain/ShreejiVegApp"
           cd /d "D:\Easy_FAS_Size_Pooja\Shreeji_Veg_AppMain\ShreejiVegApp"
           git pull origin main
 
