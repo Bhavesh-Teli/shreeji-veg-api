@@ -14,6 +14,11 @@ jobs:
         shell: cmd
 
     steps:
+      - name: Sync local dev folder
+        run: |
+          cd /d "d:\test folder\Shreeji\shreeji-veg-api"
+          git pull origin main
+
       - name: Checkout latest code
         uses: actions/checkout@v4
 
